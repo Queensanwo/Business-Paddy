@@ -434,6 +434,116 @@ The following decisions should be validated before commercial launch. They do no
 
 5\.  Use research findings to set pricing, plan limits and the final first release backlog.
 
+# **Implementation Plan**
+
+## Phase 1: Foundation & Core Inbox
+**Status (27 September 2026):** Phase 1 initial local prototype completed (`index.html`, mock data only). The next phase is connecting real accounts, authentication and PostgreSQL later.
+
+**Output:** Local Next.js app with a working shared inbox page using mock data.
+- Project setup: Next.js (App Router, TypeScript), PostgreSQL (Docker), Better Auth, local file mocks
+- Workspace creation + owner account (FR1)
+- Default roles, statuses, comment rules seeded (FR4)
+- Shared inbox UI: combined conversations, channel badges, status, assignee (FR6, FR11)
+- Basic filtering by channel/status/assignee (FR7)
+- Claim/unclaim conversation (FR9)
+- Conversation view with customer history sidebar (FR13)
+- Reply composer with send (mock) (FR17 placeholder)
+
+## Phase 2: Conversation Management & Team Basics
+**Output:** Full conversation lifecycle + role-based access working locally.
+- Assignment/reassignment by managers (FR10)
+- Internal notes & mentions (FR12)
+- Status transitions: New → In progress → Waiting → Follow up → Needs approval/Escalated → Resolved (FR23)
+- Escalation workflow with reason + note (FR26)
+- Reopen on new customer reply (FR27)
+- Role-based permissions: Owner, Manager, Agent, Trainee (FR28, FR30)
+- Staff invitation/deactivation (FR3)
+
+## Phase 3: Reply Tools & Automation
+**Output:** Saved replies, macros, AI drafts, auto-replies functional with mock data.
+- Saved replies CRUD + insert into composer (FR17)
+- Macros: insert text + actions (tag, assign, status, escalate) (FR20)
+- AI draft generation (mock) with review-before-send (FR18)
+- Controlled auto-replies: greetings, hours, acknowledgements (FR19)
+- Approval workflow for trainees/selected categories (FR22)
+- Communication rules/tone guidance (FR21)
+
+## Phase 4: Customer Intelligence & Cross-Channel
+**Output:** Customer records with matching, history, context preservation.
+- Customer detail view: conversations, channels, notes (FR13)
+- Suggested cross-channel matching with confirmation (FR14)
+- Manual split/merge of matched conversations (FR15)
+- Context preserved on reassignment/escalation (FR16)
+- Follow-up reminders (FR25)
+
+## Phase 5: Reporting & Performance
+**Output:** Owner dashboard + Business Performance View + staff performance.
+- Owner summary: waiting, overdue, avg reply time, resolved, CSAT (FR33)
+- Business Performance View: received/answered/unanswered, response rate, avg reply time, resolved, CSAT; filter by staff/team (FR33a)
+- Staff performance: response time, handled/resolved, overdue, escalations, review scores, CSAT (FR34)
+- Escalation reporting (FR35)
+- Customer feedback: Helpful/Not Helpful + comment (FR36, FR37)
+
+## Phase 6: Channels, Notifications & Polish
+**Output:** Channel connection UI, notifications, mobile-responsive layout, consistent state.
+- Channel connection flow (WhatsApp, Instagram, TikTok, Email, Website) (FR2)
+- Notification system: assignments, replies, mentions, follow-ups, approvals, escalations
+- Mobile-first responsive inbox/conversation view (FR38)
+- Web dashboard for supervision/reporting/settings (FR39)
+- State consistency across mobile/web (FR40)
+- Settings: roles, rules, replies, macros, customisation (FR5, FR24, FR29)
+
+# **Technical Architecture**
+
+**Application Framework:** Next.js with TypeScript (App Router)
+- Full-stack React framework with API routes for webhooks
+- Server Components for fast initial loads
+- TypeScript for type-safe role/permission logic
+
+**Database:** PostgreSQL, planned to run locally through Docker
+- Relational model fits workspaces, users, conversations, messages, customers
+- Supports multi-business, multi-staff, high-volume conversations
+- Avoids later migration from SQLite
+
+**Authentication:** Better Auth
+- Modern auth library for Next.js with email/password and magic links
+- Session stores workspaceId + role for RBAC
+- Extensible to OAuth providers later
+
+**File Storage:** Local mock files for this assessment; Cloudflare R2 later
+- Local `public/uploads/` or `data/uploads/` for development
+- Sharp for image processing/thumbnails
+- Swappable to R2 via adapter pattern
+
+**Reverse Proxy:** Caddy (later)
+- Automatic HTTPS, simple config, handles WebSocket upgrades
+
+**Payments:** Paystack (later)
+- Primary payment gateway for African markets
+
+**Email Service:** Resend, ZeptoMail, or Amazon SES (later)
+- Transactional email for invites, notifications, verification
+
+**Hosting Now:** Local device
+- App and database run locally for development and assessment
+- No cloud deployment required at this stage
+
+**Do Not Use:** Supabase
+- Explicitly excluded per steering decision
+
+# **Assessment Scope**
+
+This assessment uses **mock/test data only** and requires only **one local working page** (the shared inbox). The following are **not required** at this stage:
+- Working authentication or sign-in flow
+- Database testing or migrations
+- Payment integration (Paystack)
+- Email service integration
+- Cloud file storage (Cloudflare R2)
+- Public deployment or HTTPS
+- Reverse proxy (Caddy)
+
+The app and database are planned to run locally for now.
+
 # **AI Steering Log**
 
 26 September 2026: Instructed the AI to rename the product requirements file from Business_Paddy_PRD.md.md to PRD.md so the assessment grader can identify it.
@@ -443,3 +553,11 @@ The following decisions should be validated before commercial launch. They do no
 27 September 2026: Instructed the AI to add FR33a Business Performance View, a Business Performance View section, and the ability for every business owner to compare received, answered, unanswered, response rate, average reply time, resolved conversations, and customer satisfaction, with staff/team filtering for businesses with staff.
 
 27 September 2026: Instructed the AI to update the document Version from 1.0 to 1.1 and the Date from 24 September 2026 to 27 September 2026.
+
+27 September 2026: Instructed the AI to add the implementation plan (6 phases), final architecture (Next.js/TypeScript, PostgreSQL/Docker, Better Auth, local mock files → Cloudflare R2, Caddy later, Paystack later, Resend/ZeptoMail/SES later, local hosting, no Supabase), assessment scope (mock data only, one page, no auth/db/payments/email/cloud/deployment), and record the steering decision: the AI recommended SQLite but the user selected PostgreSQL because Business Paddy will support multiple businesses, staff accounts and many conversations, and the user wants to avoid migrating databases later.
+
+27 September 2026: Switched from OpenCode to Cursor because OpenCode timed out. Instructed the AI in Cursor to create design.html in the project root as a responsive Business Paddy shared-inbox design preview using mock data only (HTML, CSS and simple JavaScript; no installs or external services), including left navigation, WhatsApp/Instagram/email sample conversations, customer names, previews, channel badges, statuses, selected conversation, reply input with a styled Send Reply button, owner performance cards for received/answered/unanswered conversations, and a mobile-friendly layout. Recorded this design preview request in the steering log.
+
+27 September 2026: Instructed the AI to refine design.html by replacing the green colour scheme with a vibrant navy-blue and warm beige colour scheme, using navy blue as the main brand colour, beige for backgrounds and cards, and strong contrast so all text and buttons remain easy to read.
+
+27 September 2026: Instructed the AI to create a separate working prototype named exactly index.html using mock data only, keep the navy-blue and beige design, and make conversation selection, channel filtering, mock replies, and answered/unanswered performance updates work on desktop and mobile. Recorded that Phase 1 initial local prototype is completed, and that the next phase is connecting real accounts, authentication and PostgreSQL later.
