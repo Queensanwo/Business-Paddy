@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { Conversation, Channel } from '@/types/conversation';
+import { Conversation, InboxFilter } from '@/types/conversation';
 import { mockConversations, initialUnansweredIds } from '@/data/mockConversations';
+import { InboxState, applyReply } from '@/lib/replyLogic';
 
-type Filter = 'all' | Channel;
+type Filter = InboxFilter;
 
 interface UseInboxReturn {
   conversations: Conversation[];
@@ -21,9 +22,16 @@ interface UseInboxReturn {
   isListMode: boolean;
 }
 
+function freshInitialState(): InboxState {
+  return {
+    conversations: mockConversations.map((c) => ({ ...c, messages: [...c.messages] })),
+    unansweredIds: new Set(initialUnansweredIds),
+  };
+}
+
 export function useInbox(): UseInboxReturn {
-  const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
-  const [unansweredIds, setUnansweredIds] = useState<Set<string>>(initialUnansweredIds);
+  const [inbox, setInbox] = useState<InboxState>(freshInitialState);
+  const { conversations, unansweredIds } = inbox;
   const [filter, setFilter] = useState<Filter>('all');
   const [selectedId, setSelectedId] = useState<string>('c2');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -36,24 +44,7 @@ export function useInbox(): UseInboxReturn {
   }, []);
 
   const sendReply = useCallback((text: string) => {
-    const trimmedText = text.trim();
-    if (!trimmedText) return;
-
-    setConversations(prev => prev.map(c => {
-      if (c.id !== selectedId) return c;
-      return {
-        ...c,
-        messages: [...c.messages, { who: 'Ayo Sanwo', role: 'staff' as const, text: trimmedText }],
-        preview: trimmedText,
-        status: 'In progress' as const,
-        statusClass: 'in-progress',
-      };
-    }));
-    setUnansweredIds(prev => {
-      const next = new Set(prev);
-      next.delete(selectedId);
-      return next;
-    });
+    setInbox((prev) => applyReply(prev, selectedId, text));
   }, [selectedId]);
 
   const toggleMobileMenu = useCallback(() => {

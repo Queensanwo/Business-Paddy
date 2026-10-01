@@ -545,29 +545,79 @@ The following decisions should be validated before commercial launch. They do no
 
 # **Implementation Plan**
 
-## Phase 1: Foundation & Core Inbox (WhatsApp, Instagram, TikTok, Email, Website)
-**Status:** Phase 1 initial local prototype completed (`index.html`, mock data only). The next phase is connecting real accounts, authentication and PostgreSQL later.
+## Phase 1: Foundation, Storage, Identity, History and Paddy Chat (WhatsApp, Instagram, TikTok, Email, Website, Paddy Chat)
+**Status:** Phase 1A completed (Next.js inbox prototype + `index.html` mock, TikTok inbox update with tested reply-counting logic). Remaining parts 1B–1H are planned below. Phase 2 begins only after 1A–1H are working and tested.
 
-**Output:** Local Next.js app with a working shared inbox page using mock data for all supported channels.
-- Project setup: Next.js (App Router, TypeScript), PostgreSQL (Docker), Better Auth, local file mocks
-- Workspace creation + owner account (FR1)
-- **Demo/Live mode selection at workspace creation**: demo mode uses fictional data, shows "Demo — no real messages are sent" banner, simulated replies only, no real channel sends, no document collection, verification shown as example only, demo data isolated from live
-- Default roles, statuses, comment rules seeded (FR4)
-- Shared inbox UI: combined conversations across WhatsApp, Instagram, TikTok, Email, Website with channel badges, status, assignee (FR6, FR11)
-- Basic filtering by channel (WhatsApp/Instagram/TikTok/Email/Website)/status/assignee (FR7)
+### 1A. Next.js Inbox Prototype (completed)
+**Output:** Local Next.js app with a working shared inbox page using mock data.
+- Project setup: Next.js (App Router, TypeScript), local file mocks
+- Shared inbox UI: combined conversations across WhatsApp, Instagram, TikTok, Email with channel badges, status, assignee (FR6, FR11)
+- Basic filtering by channel, including Unanswered filter (FR7)
 - Claim/unclaim conversation (FR9)
 - Conversation view with customer history sidebar (FR13)
-- Reply composer with send (mock) (FR17 placeholder)
+- Reply composer with send (mock), tested reply-counting logic (FR17 placeholder)
 - **Slate Blue and White default theme applied** (professional, subtle, responsive)
 - **Empty, loading, error, disconnected states** implemented
+- **Ethics & privacy foundations (implemented in mock)**: business-separated data model, RBAC stub (owner/manager/agent/trainee), demo data flag, AI/real message distinction in UI, internal-only reminders UI, no customer-reminder UI
+
+### 1B. PostgreSQL Storage
+**Output:** Local PostgreSQL (Docker) with the full Business Paddy schema, seeded defaults, migrations working.
+- Database setup: PostgreSQL through Docker, migrations, seed scripts
+- Workspace, user, conversation, message, customer tables (FR1)
+- Default roles, statuses, comment rules seeded (FR4)
 - **Conversation history storage schema** (FR41): messages, replies, customer/channel details, timestamps, assignees, reassignments, internal notes, status changes, escalations, approvals, attachments, reminder activity
 - **Provider message ID tracking** (FR42) in database schema
 - **Channel inbox mirroring flags** (FR43) per channel integration
 - **History search API** (FR44) with permission-based access control
-- **Ethics & privacy foundations (implemented in mock)**: business-separated data model, RBAC stub (owner/manager/agent/trainee), demo data flag, AI/real message distinction in UI, internal-only reminders UI, no customer-reminder UI
-- **Missing in Phase 1**: real authentication, business verification flow, abuse detection, audit logging, retention policies, encryption at rest, Acceptable Use Policy pages
+- Demo data kept separate from live data; no real customer data in the repository
+
+### 1C. Better Auth and Business Workspaces
+**Output:** Working sign-in, separate logins, workspace creation with Demo/Live mode selection.
+- Better Auth integration: email/password and magic links, sessions carrying workspaceId + role
+- Workspace creation + owner account (FR1)
+- **Demo/Live mode selection at workspace creation**: demo mode uses fictional data, shows "Demo — no real messages are sent" banner, simulated replies only, no real channel sends, no document collection, verification shown as example only, demo data isolated from live
+- Staff invitation/deactivation with separate logins (FR3)
+- **Missing after 1C**: real email/phone verification, business verification flow, abuse detection, audit logging, retention policies, encryption at rest, Acceptable Use Policy pages (covered in later parts/phases)
+
+### 1D. Customer Records and Saved Conversation History
+**Output:** Customer views, cross-channel matching, searchable permission-scoped history.
+- Customer detail view: conversations, channels, notes (FR13)
+- Suggested cross-channel matching with staff confirmation (FR14)
+- Manual split/merge of matched conversations (FR15)
+- Context preserved on reassignment/escalation (FR16)
+- **Business-separated conversation history** (FR41): strict data isolation per business, demo data separated from real data
+- **History access control** (FR44): permission-based search and view for staff, owner/manager review access
+- Conversation search by customer name, contact detail and content (FR8)
+
+### 1E. Paddy Chat Guest Conversations and Secure Return Links
+**Output:** Paddy Chat as a core channel — guests chat without an account and return securely later.
+- Paddy Chat guest conversation flow: shareable chat link per business, no customer account or app download required
+- Guest messages enter the shared inbox alongside WhatsApp, Instagram, TikTok, Email and Website
+- Secure return links: expiring, single-use-capable links letting the same guest resume their conversation
+- Guest identity handled per privacy rules; no scraping or unofficial workarounds
+
+### 1F. Optional Customer-Contact Saving After Resolved Chat or Completed Deal
+**Output:** Consent-based contact saving offered only after a resolved chat or completed deal.
+- Optional prompt to save customer contact details after resolution or deal completion
+- Explicit customer consent required; staff can skip; never automatic
+- Saved contacts linked to conversation history per business
+
+### 1G. Paddy Chat Security, Accessibility, Voice Notes and Service Reply Notifications
+**Output:** Hardened, accessible Paddy Chat with voice notes and reply notifications.
+- Security: rate limiting, spam/abuse controls, validated guest sessions, no credential exposure
+- Accessibility: readable contrast, keyboard navigation, screen-reader labels, mobile-friendly layout
+- Voice notes: guests and staff can send and play voice notes where supported
+- Service reply notifications: guests are notified of staff replies through the return-link channel
+
+### 1H. WhatsApp Cost and Safety Centre
+**Output:** Transparent WhatsApp cost and safety information inside Business Paddy.
+- Template, messaging-window and cost explainer for WhatsApp Business Platform usage
+- Sending limits and trust levels surfaced per business
+- Safety guidance: opt-out handling, ban-risk reduction, account-health signals
+- Links to official WhatsApp documentation; no invented pricing
 
 ## Phase 2: Conversation Management, Team & Permissions
+**Entry gate:** begins only after Phase 1 parts 1A–1H are working and tested.
 **Output:** Full conversation lifecycle + role-based access + owner/manager delegation working locally.
 - Assignment/reassignment by managers (FR10)
 - Internal notes & mentions (FR12)
@@ -805,3 +855,5 @@ Instructed the AI to add an Ethics, Privacy and Business Verification section wi
 Instructed the AI to implement Phase 1 as a working Next.js 14 web application: converted the index.html prototype into a clean Next.js App Router project with TypeScript, component-based architecture (Navigation, InboxList, ConversationThread, MetricCards, UI primitives), custom hook (useInbox) for all state logic, mock data module, and complete navy-blue + off-white design system in globals.css. All features working: channel filters, conversation selection, mock replies with real-time metric updates, mobile responsive nav/back. No database, auth, Docker, or real integrations. Created README.md with run instructions. Preserved index.html, design.html, and PRD.md unchanged. Ready for Phase 2 (PostgreSQL, Better Auth, real channel integrations).
 
 Instructed the AI to add TikTok to the existing Next.js inbox only, without redesign or removing any feature: TikTok filter placed last (All | WhatsApp | Instagram | Email | TikTok) in one horizontal scrollable line; one mock TikTok conversation (Adaeze Nwosu, New, unassigned) added to existing mock data; TikTok badge style added; TikTok thread opens on click with message history; mock replies work and update metrics (9 received, 5 answered, 4 unanswered); existing WhatsApp, Instagram and Email conversations unchanged; navy-blue and off-white design preserved; fixed two pre-existing TypeScript status-class type errors; verified all filters, all conversations and clean compile.
+
+Instructed the AI to reorganise the PRD implementation plan so Paddy Chat is a core Phase 1 channel before Phase 2: Phase 1 split into 1A Next.js inbox prototype (completed), 1B PostgreSQL storage, 1C Better Auth and business workspaces, 1D customer records and saved conversation history, 1E Paddy Chat guest conversations and secure return links, 1F optional customer-contact saving after resolved chat or completed deal, 1G Paddy Chat security, accessibility, voice notes and service reply notifications, 1H WhatsApp Cost and Safety Centre; Phase 2 begins only after 1A–1H are working and tested. Preserved all existing requirements and completed work. Documentation only, no build or interface changes.

@@ -6,6 +6,8 @@ export type Role = 'customer' | 'staff';
 
 export type StatusClass = 'new' | 'in-progress' | 'waiting' | 'follow-up' | 'escalated' | 'resolved';
 
+export type InboxFilter = 'all' | 'unanswered' | Channel;
+
 export interface Message {
   who: string;
   role: Role;

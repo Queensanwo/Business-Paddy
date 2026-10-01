@@ -1,19 +1,24 @@
 'use client';
 
-import { Conversation, channelLabel, Channel } from '@/types/conversation';
+import { Conversation, channelLabel, InboxFilter } from '@/types/conversation';
 import { Chip } from '@/components/UI/Chip';
 import { Badge } from '@/components/UI/Badge';
 
 interface InboxListProps {
   conversations: Conversation[];
-  filter: 'all' | Channel;
+  unansweredIds: Set<string>;
+  filter: InboxFilter;
   selectedId: string;
-  onFilterChange: (filter: 'all' | Channel) => void;
+  onFilterChange: (filter: InboxFilter) => void;
   onConversationClick: (id: string) => void;
 }
 
-export function InboxList({ conversations, filter, selectedId, onFilterChange, onConversationClick }: InboxListProps) {
-  const filteredConversations = conversations.filter(c => filter === 'all' || c.channel === filter);
+export function InboxList({ conversations, unansweredIds, filter, selectedId, onFilterChange, onConversationClick }: InboxListProps) {
+  const filteredConversations = conversations.filter((c) => {
+    if (filter === 'all') return true;
+    if (filter === 'unanswered') return unansweredIds.has(c.id);
+    return c.channel === filter;
+  });
 
   return (
     <section className="inbox" id="inbox">
@@ -26,6 +31,7 @@ export function InboxList({ conversations, filter, selectedId, onFilterChange, o
           <Chip data-filter="instagram" active={filter === 'instagram'} onClick={() => onFilterChange('instagram')}>Instagram</Chip>
           <Chip data-filter="email" active={filter === 'email'} onClick={() => onFilterChange('email')}>Email</Chip>
           <Chip data-filter="tiktok" active={filter === 'tiktok'} onClick={() => onFilterChange('tiktok')}>TikTok</Chip>
+          <Chip data-filter="unanswered" active={filter === 'unanswered'} onClick={() => onFilterChange('unanswered')}>Unanswered</Chip>
         </div>
       </div>
       <div className="conv-list" id="convList">

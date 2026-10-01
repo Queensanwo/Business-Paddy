@@ -33,6 +33,7 @@ export default function InboxPage() {
       />
       <InboxList
         conversations={conversations}
+        unansweredIds={unansweredIds}
         filter={filter}
         selectedId={selectedId}
         onFilterChange={setFilter}
