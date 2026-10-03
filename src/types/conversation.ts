@@ -1,4 +1,4 @@
-export type Channel = 'whatsapp' | 'instagram' | 'email' | 'tiktok';
+export type Channel = 'whatsapp' | 'instagram' | 'email' | 'tiktok' | 'paddy_chat';
 
 export type Status = 'New' | 'In progress' | 'Waiting for customer' | 'Follow up' | 'Escalated' | 'Resolved';
 
@@ -8,10 +8,17 @@ export type StatusClass = 'new' | 'in-progress' | 'waiting' | 'follow-up' | 'esc
 
 export type InboxFilter = 'all' | 'unanswered' | Channel;
 
+export interface MessageAttachment {
+  id: string;
+  fileName: string;
+  mimeType: string;
+}
+
 export interface Message {
   who: string;
   role: Role;
   text: string;
+  attachments?: MessageAttachment[];
 }
 
 export interface Conversation {
@@ -31,6 +38,7 @@ export const channelLabel: Record<Channel, string> = {
   instagram: 'Instagram',
   email: 'Email',
   tiktok: 'TikTok',
+  paddy_chat: 'Paddy Chat',
 };
 
 export const statusClassMap: Record<Status, string> = {

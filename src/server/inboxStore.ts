@@ -18,16 +18,16 @@ export class InboxApiError extends Error {
   }
 }
 
-// WEBSITE and PADDY_CHAT have no inbox filter/badge yet (planned channel
-// work). Rows with those channels are excluded from the inbox until the UI
-// supports them — never silently mislabelled.
+// WEBSITE has no inbox filter/badge yet (planned channel work). Rows with
+// that channel are excluded from the inbox until the UI supports them —
+// never silently mislabelled.
 const channelToUi: Record<DbChannel, Channel | null> = {
   WHATSAPP: 'whatsapp',
   INSTAGRAM: 'instagram',
   TIKTOK: 'tiktok',
   EMAIL: 'email',
   WEBSITE: null,
-  PADDY_CHAT: null,
+  PADDY_CHAT: 'paddy_chat',
 };
 
 const statusToUi: Record<ConvStatus, { status: Status; statusClass: StatusClass }> = {
@@ -57,11 +57,14 @@ async function loadRows(workspaceId: string) {
   return prisma.conversation.findMany({
     where: {
       workspaceId,
-      channel: { in: ['WHATSAPP', 'INSTAGRAM', 'TIKTOK', 'EMAIL'] },
+      channel: { in: ['WHATSAPP', 'INSTAGRAM', 'TIKTOK', 'EMAIL', 'PADDY_CHAT'] },
     },
     orderBy: { sortOrder: 'asc' },
     include: {
-      messages: { orderBy: { createdAt: 'asc' } },
+      messages: {
+        orderBy: { createdAt: 'asc' },
+        include: { attachments: { select: { id: true, fileName: true, mimeType: true } } },
+      },
       customer: true,
       assignee: true,
     },
@@ -89,6 +92,11 @@ export function toUiConversation(row: ConversationRow): Conversation {
       who: m.kind === 'CUSTOMER' ? customerName : m.senderName,
       role: kindToRole(m.kind),
       text: m.text,
+      attachments: m.attachments.map((a) => ({
+        id: a.id,
+        fileName: a.fileName,
+        mimeType: a.mimeType,
+      })),
     })),
   };
 }
@@ -113,14 +121,35 @@ export async function loadInbox(workspaceId: string): Promise<InboxSnapshot> {
   return snapshotOf(await loadRows(workspaceId));
 }
 
+export interface ReplyAttachment {
+  storageKey: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+}
+
 export async function saveReply(
   workspaceId: string,
   conversationId: string,
   text: string,
   sender: string,
+  attachments: ReplyAttachment[] = [],
 ): Promise<InboxSnapshot> {
   const trimmed = text.trim();
-  if (!trimmed) throw new InboxApiError(400, 'Reply text is required.');
+  if (!trimmed && attachments.length === 0) {
+    throw new InboxApiError(400, 'Reply text or an attachment is required.');
+  }
+  if (attachments.length > 5) throw new InboxApiError(400, 'At most 5 attachments per reply.');
+  for (const a of attachments) {
+    if (
+      typeof a.storageKey !== 'string' ||
+      typeof a.fileName !== 'string' ||
+      typeof a.mimeType !== 'string' ||
+      typeof a.sizeBytes !== 'number'
+    ) {
+      throw new InboxApiError(400, 'Invalid attachment.');
+    }
+  }
 
   const existing = await prisma.conversation.findFirst({
     where: { id: conversationId, workspaceId },
@@ -136,13 +165,21 @@ export async function saveReply(
         conversationId,
         kind: 'STAFF',
         senderName: sender,
-        text: trimmed,
+        text: trimmed || '(attachment)',
+        attachments: {
+          create: attachments.map((a) => ({
+            fileName: a.fileName.slice(0, 120),
+            mimeType: a.mimeType.slice(0, 80),
+            sizeBytes: Math.floor(a.sizeBytes),
+            storageKey: a.storageKey,
+          })),
+        },
       },
     }),
     prisma.conversation.update({
       where: { id: conversationId },
       data: {
-        preview: trimmed,
+        preview: trimmed || `Sent ${attachments.length > 1 ? `${attachments.length} files` : attachments[0].fileName}`,
         // First reply moves an unanswered conversation to In progress.
         // Repeat replies never change the status again.
         ...(hadStaffReply ? {} : { status: 'IN_PROGRESS' as ConvStatus }),

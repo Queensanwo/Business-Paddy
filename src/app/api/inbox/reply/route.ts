@@ -5,11 +5,21 @@ import { requireStaff } from '@/server/requireStaff';
 export async function POST(req: Request) {
   try {
     const staff = await requireStaff();
-    const body = (await req.json()) as { conversationId?: unknown; text?: unknown };
+    const body = (await req.json()) as {
+      conversationId?: unknown;
+      text?: unknown;
+      attachments?: unknown;
+    };
     if (typeof body.conversationId !== 'string' || typeof body.text !== 'string') {
       return NextResponse.json({ error: 'conversationId and text are required.' }, { status: 400 });
     }
-    const snapshot = await saveReply(staff.workspaceId, body.conversationId, body.text, staff.name);
+    const snapshot = await saveReply(
+      staff.workspaceId,
+      body.conversationId,
+      body.text,
+      staff.name,
+      Array.isArray(body.attachments) ? (body.attachments as never[]) : [],
+    );
     return NextResponse.json(snapshot);
   } catch (e) {
     if (e instanceof InboxApiError) {

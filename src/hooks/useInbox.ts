@@ -20,7 +20,7 @@ interface UseInboxReturn {
   loadError: string;
   setFilter: (filter: Filter) => void;
   selectConversation: (id: string) => void;
-  sendReply: (text: string) => void;
+  sendReply: (text: string, attachments?: { storageKey: string; fileName: string; mimeType: string; sizeBytes: number }[]) => void;
   toggleMobileMenu: () => void;
   closeMobileMenu: () => void;
   goBackToList: () => void;
@@ -78,15 +78,18 @@ export function useInbox(): UseInboxReturn {
   }, []);
 
   const sendReply = useCallback(
-    (text: string) => {
+    (
+      text: string,
+      attachments: { storageKey: string; fileName: string; mimeType: string; sizeBytes: number }[] = [],
+    ) => {
       const trimmed = text.trim();
-      if (!trimmed) return;
+      if (!trimmed && attachments.length === 0) return;
       // Optimistic update for instant feedback, then reconcile with the server.
-      setInbox((prev) => applyReply(prev, selectedId, trimmed));
+      setInbox((prev) => applyReply(prev, selectedId, trimmed || '(attachment)'));
       fetch('/api/inbox/reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId: selectedId, text: trimmed }),
+        body: JSON.stringify({ conversationId: selectedId, text: trimmed, attachments }),
       })
         .then(async (res) => {
           if (res.status === 401) {

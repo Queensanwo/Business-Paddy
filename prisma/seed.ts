@@ -23,6 +23,7 @@ interface SeedConversation {
   channel: Channel;
   status: ConvStatus;
   assignee: 'OWNER' | 'AGENT' | null;
+  guestToken?: string;
   sortOrder: number;
   messages: SeedMessage[];
 }
@@ -100,6 +101,14 @@ const CONVERSATIONS: SeedConversation[] = [
       { kind: 'CUSTOMER', who: 'Adaeze Nwosu', text: 'Hello! I saw your TikTok video. Is the skincare bundle still on promo?', atMinutesAgo: 32 },
     ],
   },
+  {
+    id: 'c10', customer: 'Emeka Obi', contact: 'paddy-chat:guest',
+    channel: 'PADDY_CHAT', status: 'NEW', assignee: null, sortOrder: 10,
+    guestToken: 'b'.repeat(64),
+    messages: [
+      { kind: 'CUSTOMER', who: 'Emeka Obi', text: 'Good afternoon! Do you deliver Ankara fabrics to Ikeja?', atMinutesAgo: 12 },
+    ],
+  },
 ];
 
 async function main() {
@@ -159,6 +168,7 @@ async function main() {
         channel: conv.channel,
         status: conv.status,
         sortOrder: conv.sortOrder,
+        guestToken: conv.guestToken ?? null,
         assigneeId: conv.assignee === 'OWNER' ? owner.id : conv.assignee === 'AGENT' ? agent.id : null,
         preview: last.text,
         messages: {

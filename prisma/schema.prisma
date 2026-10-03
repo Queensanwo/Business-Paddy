@@ -170,6 +170,9 @@ model Conversation {
   channelAccount ChannelAccount? @relation(fields: [channelAccountId], references: [id], onDelete: SetNull)
   status      ConvStatus @default(NEW)
   sortOrder   Int        @default(0)
+  // Paddy Chat guest access: unguessable return-link token. Null for all
+  // other channels. The token alone grants guest access to this thread.
+  guestToken  String?    @unique
   assigneeId  String?
   assignee    User?      @relation("Assignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   preview     String?

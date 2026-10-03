@@ -13,6 +13,7 @@
   --instagram: #a12d68;
   --email: #0d4a8c;
   --tiktok: #010101;
+  --paddy: #1d4fb8;
   --radius: 14px;
   --shadow: 0 10px 30px rgba(11, 31, 77, 0.1);
 }
@@ -230,6 +231,7 @@ button, input, textarea, select {
 .badge.instagram { background: var(--instagram); }
 .badge.email { background: var(--email); }
 .badge.tiktok { background: var(--tiktok); }
+.badge.paddy_chat { background: var(--paddy); }
 
 .status {
   font-size: 0.68rem;

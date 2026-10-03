@@ -87,7 +87,10 @@ export async function loadCustomerDetail(
       conversations: {
         orderBy: { sortOrder: 'asc' },
         include: {
-          messages: { orderBy: { createdAt: 'asc' } },
+          messages: {
+            orderBy: { createdAt: 'asc' },
+            include: { attachments: { select: { id: true, fileName: true, mimeType: true } } },
+          },
           assignee: true,
           customer: true,
         },

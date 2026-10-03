@@ -52,6 +52,18 @@ export default function WorkspacePage() {
               <button className="chip" type="button" onClick={signOut}>Sign out</button>
             </p>
           </article>
+          <article className="card received">
+            <div className="label">Paddy Chat guest link</div>
+            <p className="assignee" style={{ marginTop: '8px' }}>
+              Share this link so customers can chat without an account:
+            </p>
+            <p className="assignee" style={{ marginTop: '8px' }}>
+              <strong>{user ? `/chat/${user.workspaceId}` : 'Loading…'}</strong>
+            </p>
+            <p className="assignee" style={{ marginTop: '8px' }}>
+              Guests receive a private return link to continue later.
+            </p>
+          </article>
         </div>
       </section>
     </div>
