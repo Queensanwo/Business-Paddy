@@ -48,6 +48,9 @@ export default function SignInPage() {
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
         <p className="auth-alt">
+          <Link href="/forgot-password">Forgot password?</Link>
+        </p>
+        <p className="auth-alt">
           New business? <Link href="/sign-up">Create a workspace</Link>
         </p>
       </form>

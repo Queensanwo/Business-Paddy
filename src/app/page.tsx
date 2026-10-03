@@ -1,6 +1,7 @@
 'use client';
 
 import { useInbox } from '@/hooks/useInbox';
+import { useSessionUser, roleLabel } from '@/hooks/useSessionUser';
 import { authClient } from '@/lib/auth-client';
 import { Navigation } from '@/components/Navigation';
 import { InboxList } from '@/components/InboxList';
@@ -29,6 +30,7 @@ export default function InboxPage() {
     isMobileMenuOpen,
     isListMode,
   } = useInbox();
+  const { user } = useSessionUser();
 
   const answered = conversations.length - unansweredIds.size;
 
@@ -72,6 +74,9 @@ export default function InboxPage() {
         isOpen={isMobileMenuOpen}
         onClose={closeMobileMenu}
         totalCount={conversations.length}
+        active="inbox"
+        userName={user?.name ?? 'Business Paddy'}
+        userSub={user ? `${roleLabel(user.role)} · ${user.workspaceName}` : 'Shared inbox'}
       />
       <InboxList
         conversations={conversations}

@@ -66,6 +66,8 @@ model Workspace {
   reminders    Reminder[]
   auditLogs    AuditLog[]
   channels     ChannelAccount[]
+  payments     Payment[]
+  invitations  StaffInvitation[]
 }
 
 model User {
@@ -225,6 +227,45 @@ model Reminder {
   createdAt      DateTime       @default(now())
 
   @@index([workspaceId, status])
+}
+
+// Test-mode payments only. A test payment never activates a real subscription
+// (activatedSubscription stays false; enforced in code, not just convention).
+model Payment {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  reference   String   @unique
+  email       String?
+  amountKobo  Int
+  currency    String   @default("NGN")
+  status      String   @default("PENDING")
+  channel     String?
+  paidAt      DateTime?
+  isTest      Boolean  @default(true)
+  activatedSubscription Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([workspaceId, status])
+}
+
+// Staff invitations: secure single-use expiring links. The raw token is only
+// ever sent by email; only its SHA-256 hash is stored. No passwords by email.
+model StaffInvitation {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  email       String
+  name        String
+  role        Role      @default(AGENT)
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, email])
 }
 
 model AuditLog {

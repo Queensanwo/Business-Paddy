@@ -79,15 +79,37 @@ button, input, textarea, select {
 .nav-links a {
   color: #f7f1e4;
   text-decoration: none;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-radius: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-weight: 600;
 }
 
 .nav-links a.active,
 .nav-links a:hover { background: rgba(255, 255, 255, 0.14); }
+
+.nav-links a.active { font-weight: 700; }
+
+.metrics-single {
+  grid-template-columns: 1fr;
+  max-width: 780px;
+  width: 100%;
+  margin-inline: auto;
+}
+
+/* Pages with sidebar + single content column (team, settings, workspace).
+   Without this, .main lands in the 340px middle column of the 3-column grid. */
+.app-single {
+  grid-template-columns: 232px minmax(0, 1fr);
+}
+
+.card,
+.thread-wrap {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
 
 .count {
   background: var(--sand);

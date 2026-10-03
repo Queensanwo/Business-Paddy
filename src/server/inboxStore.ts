@@ -68,9 +68,9 @@ async function loadRows(workspaceId: string) {
   });
 }
 
-type ConversationRow = Awaited<ReturnType<typeof loadRows>>[number];
+export type ConversationRow = Awaited<ReturnType<typeof loadRows>>[number];
 
-function toUiConversation(row: ConversationRow): Conversation {
+export function toUiConversation(row: ConversationRow): Conversation {
   const { status, statusClass } = statusToUi[row.status];
   const uiChannel = channelToUi[row.channel];
   if (uiChannel === null) throw new InboxApiError(500, 'Unsupported channel.');
