@@ -12,6 +12,8 @@ export default function InboxPage() {
     unansweredIds,
     filter,
     selectedId,
+    loadState,
+    loadError,
     setFilter,
     selectConversation,
     sendReply,
@@ -23,6 +25,40 @@ export default function InboxPage() {
   } = useInbox();
 
   const answered = conversations.length - unansweredIds.size;
+
+  if (loadState === 'loading') {
+    return (
+      <div className="app" id="app">
+        <section className="main">
+          <div className="thread-wrap">
+            <div className="thread-head">
+              <div>
+                <h3>Loading inbox…</h3>
+                <div className="assignee">Fetching conversations from the database.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  if (loadState === 'error') {
+    return (
+      <div className="app" id="app">
+        <section className="main">
+          <div className="thread-wrap">
+            <div className="thread-head">
+              <div>
+                <h3>Inbox unavailable</h3>
+                <div className="assignee">{loadError}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className={`app ${isListMode ? 'list-mode' : ''}`} id="app">

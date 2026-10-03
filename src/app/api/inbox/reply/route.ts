@@ -1,0 +1,19 @@
+import { NextResponse } from 'next/server';
+import { saveReply, InboxApiError } from '@/server/inboxStore';
+
+export async function POST(req: Request) {
+  try {
+    const body = (await req.json()) as { conversationId?: unknown; text?: unknown };
+    if (typeof body.conversationId !== 'string' || typeof body.text !== 'string') {
+      return NextResponse.json({ error: 'conversationId and text are required.' }, { status: 400 });
+    }
+    const snapshot = await saveReply(body.conversationId, body.text);
+    return NextResponse.json(snapshot);
+  } catch (e) {
+    if (e instanceof InboxApiError) {
+      return NextResponse.json({ error: e.message }, { status: e.status });
+    }
+    console.error('POST /api/inbox/reply failed', e);
+    return NextResponse.json({ error: 'Could not save the reply.' }, { status: 500 });
+  }
+}

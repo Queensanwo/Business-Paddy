@@ -69,24 +69,28 @@ src/
 - **State:** React hooks (`useInbox.ts`)
 - **Mock Data:** TypeScript constants (`mockConversations.ts`)
 
-## Database (Phase 1B — files ready, engine pending)
+## Database (Phase 1B — live)
 
-PostgreSQL 16 runs through Docker. First start Docker Desktop (requires WSL2 on
-Windows — run `wsl.exe --install` once as admin and restart if missing), then:
+PostgreSQL 16 runs through Docker. First start Docker Desktop, then:
 
 ```bash
 docker compose up -d
-npx prisma migrate dev --name init
+npx prisma migrate dev
 npm run db:seed
 ```
 
-Verify: `npx prisma validate`, seed prints row counts, inbox still runs on mock
-data at http://localhost:3000 (storage cutover is a later step).
+The inbox is database-backed: it loads conversations from PostgreSQL through
+`GET /api/inbox` and saves replies through `POST /api/inbox/reply`. Replies,
+status changes and unanswered counts persist across refresh and restart.
+Database credentials stay server-side (API routes only, never `NEXT_PUBLIC_`).
+Seed data is demo-only (demo workspace + `Demo data` badge in the inbox).
+
+Verify: `npx prisma validate`, seed prints row counts, app at
+http://localhost:3000 (9 conversations, 4 unanswered after a fresh seed).
 
 Key files: `docker-compose.yml`, `.env` (gitignored, see `.env.example`),
-`prisma/schema.prisma` (workspaces, users, customers, conversations, messages,
-attachments, reminders, audit log, channel accounts), `prisma/seed.ts`,
-`src/lib/db.ts` (Prisma client singleton, not wired into the UI yet).
+`prisma/schema.prisma`, `prisma/seed.ts`, `src/lib/db.ts` (Prisma singleton),
+`src/server/inboxStore.ts` (load/save + mappers), `src/app/api/inbox/`.
 
 ## Roadmap (Planned)
 
