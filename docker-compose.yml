@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: business-paddy-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: paddy
+      POSTGRES_PASSWORD: paddy_dev
+      POSTGRES_DB: business_paddy
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paddy -d business_paddy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
