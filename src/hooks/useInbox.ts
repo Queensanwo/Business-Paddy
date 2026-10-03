@@ -35,8 +35,16 @@ function toState(payload: InboxPayload): InboxState {
   };
 }
 
+function redirectToSignIn() {
+  if (typeof window !== 'undefined') window.location.href = '/sign-in';
+}
+
 async function fetchInbox(): Promise<InboxState> {
   const res = await fetch('/api/inbox');
+  if (res.status === 401) {
+    redirectToSignIn();
+    throw new Error('Sign in required.');
+  }
   if (!res.ok) throw new Error('Inbox request failed.');
   return toState((await res.json()) as InboxPayload);
 }
@@ -81,6 +89,10 @@ export function useInbox(): UseInboxReturn {
         body: JSON.stringify({ conversationId: selectedId, text: trimmed }),
       })
         .then(async (res) => {
+          if (res.status === 401) {
+            redirectToSignIn();
+            throw new Error('Sign in required.');
+          }
           if (!res.ok) throw new Error('Reply request failed.');
           setInbox(toState((await res.json()) as InboxPayload));
         })

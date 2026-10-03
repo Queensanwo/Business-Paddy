@@ -92,12 +92,26 @@ Key files: `docker-compose.yml`, `.env` (gitignored, see `.env.example`),
 `prisma/schema.prisma`, `prisma/seed.ts`, `src/lib/db.ts` (Prisma singleton),
 `src/server/inboxStore.ts` (load/save + mappers), `src/app/api/inbox/`.
 
+## Authentication (Phase 1C — owner login)
+
+Better Auth with email + password, sessions stored in PostgreSQL. Secrets live
+in `.env` (`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`) — never exposed to the
+browser. Every inbox API call requires a signed-in staff member; the workspace
+and reply sender come from the session, so each business only sees its own
+data. New businesses sign up at `/sign-up` (creates workspace + owner login);
+existing owners sign in at `/sign-in` and sign out from the inbox top bar.
+
+Demo logins (local demo data only): `owner@example.com` / `demo-owner-123`,
+`agent@example.com` / `demo-agent-123`.
+
 ## Roadmap (Planned)
 
 | Phase | Focus |
 |-------|-------|
 | 1A | ✅ Foundation & Core Inbox (mock) |
-| 1B | 🟡 PostgreSQL storage (files ready; needs Docker daemon + WSL2) |
+| 1B | ✅ PostgreSQL storage (live, migrated, seeded) |
+| DB cutover | ✅ Inbox reads/writes PostgreSQL |
+| 1C | ✅ Owner login + workspaces (this build; staff invites + live verification next) |
 | 2 | Conversation Management, Team & Permissions |
 | 3 | Reply Tools, Automation & AI |
 | 4 | Customer Intelligence, Cross-Channel & Branding |

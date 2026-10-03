@@ -9,7 +9,6 @@ import {
 import { Channel as DbChannel, ConvStatus, MessageKind, Prisma } from '@prisma/client';
 
 export const DEMO_WORKSPACE_ID = 'demo-workspace-1';
-const STAFF_SENDER = 'Ayo Sanwo';
 
 export class InboxApiError extends Error {
   status: number;
@@ -54,10 +53,10 @@ export function timeAgo(date: Date): string {
   return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
 }
 
-async function loadRows() {
+async function loadRows(workspaceId: string) {
   return prisma.conversation.findMany({
     where: {
-      workspaceId: DEMO_WORKSPACE_ID,
+      workspaceId,
       channel: { in: ['WHATSAPP', 'INSTAGRAM', 'TIKTOK', 'EMAIL'] },
     },
     orderBy: { sortOrder: 'asc' },
@@ -110,20 +109,21 @@ function snapshotOf(rows: ConversationRow[]): InboxSnapshot {
   };
 }
 
-export async function loadInbox(): Promise<InboxSnapshot> {
-  return snapshotOf(await loadRows());
+export async function loadInbox(workspaceId: string): Promise<InboxSnapshot> {
+  return snapshotOf(await loadRows(workspaceId));
 }
 
 export async function saveReply(
+  workspaceId: string,
   conversationId: string,
   text: string,
-  sender: string = STAFF_SENDER,
+  sender: string,
 ): Promise<InboxSnapshot> {
   const trimmed = text.trim();
   if (!trimmed) throw new InboxApiError(400, 'Reply text is required.');
 
   const existing = await prisma.conversation.findFirst({
-    where: { id: conversationId, workspaceId: DEMO_WORKSPACE_ID },
+    where: { id: conversationId, workspaceId },
     include: { messages: { select: { kind: true } } },
   });
   if (!existing) throw new InboxApiError(404, 'Conversation not found.');
@@ -150,7 +150,7 @@ export async function saveReply(
     }),
     prisma.auditLog.create({
       data: {
-        workspaceId: DEMO_WORKSPACE_ID,
+        workspaceId,
         action: 'conversation.replied',
         entityType: 'Conversation',
         entityId: conversationId,
@@ -158,7 +158,7 @@ export async function saveReply(
     }),
   ]);
 
-  return snapshotOf(await loadRows());
+  return snapshotOf(await loadRows(workspaceId));
 }
 
 export { channelLabel };

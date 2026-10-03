@@ -1,9 +1,13 @@
 import { PrismaClient, Channel, ConvStatus } from '@prisma/client';
+import { auth } from '../src/server/auth';
 
 const prisma = new PrismaClient();
 
-const OWNER_ID = 'demo-user-owner';
-const AGENT_ID = 'demo-user-agent';
+// Demo-only credentials (documented in README, never for real data).
+const OWNER_EMAIL = 'owner@example.com';
+const OWNER_PASSWORD = 'demo-owner-123';
+const AGENT_EMAIL = 'agent@example.com';
+const AGENT_PASSWORD = 'demo-agent-123';
 
 interface SeedMessage {
   kind: 'CUSTOMER' | 'STAFF';
@@ -18,7 +22,7 @@ interface SeedConversation {
   contact: string;
   channel: Channel;
   status: ConvStatus;
-  assigneeId: string | null;
+  assignee: 'OWNER' | 'AGENT' | null;
   sortOrder: number;
   messages: SeedMessage[];
 }
@@ -29,14 +33,14 @@ interface SeedConversation {
 const CONVERSATIONS: SeedConversation[] = [
   {
     id: 'c1', customer: 'Ngozi Adeyemi', contact: 'whatsapp:+2340000000001',
-    channel: 'WHATSAPP', status: 'NEW', assigneeId: null, sortOrder: 1,
+    channel: 'WHATSAPP', status: 'NEW', assignee: null, sortOrder: 1,
     messages: [
       { kind: 'CUSTOMER', who: 'Ngozi Adeyemi', text: 'Good evening. Please, do you still have the Ankara set in size 14?', atMinutesAgo: 2 },
     ],
   },
   {
     id: 'c2', customer: 'Ibrahim Musa', contact: 'instagram:@ibrahim.musa',
-    channel: 'INSTAGRAM', status: 'IN_PROGRESS', assigneeId: AGENT_ID, sortOrder: 2,
+    channel: 'INSTAGRAM', status: 'IN_PROGRESS', assignee: 'AGENT', sortOrder: 2,
     messages: [
       { kind: 'CUSTOMER', who: 'Ibrahim Musa', text: 'The brown sandals in your story — how much for two pairs?', atMinutesAgo: 21 },
       { kind: 'STAFF', who: 'Funke Bello', text: 'Hi Ibrahim, two pairs are ₦28,000 including delivery in Abuja. Shall I hold them?', atMinutesAgo: 18 },
@@ -44,7 +48,7 @@ const CONVERSATIONS: SeedConversation[] = [
   },
   {
     id: 'c3', customer: 'Chioma Okeke', contact: 'chioma.okeke@example.com',
-    channel: 'EMAIL', status: 'WAITING_FOR_CUSTOMER', assigneeId: OWNER_ID, sortOrder: 3,
+    channel: 'EMAIL', status: 'WAITING_FOR_CUSTOMER', assignee: 'OWNER', sortOrder: 3,
     messages: [
       { kind: 'CUSTOMER', who: 'Chioma Okeke', text: 'Hello, I paid for order 1042 this morning. Can you confirm it will go to Enugu, Independence Layout?', atMinutesAgo: 70 },
       { kind: 'STAFF', who: 'Ayo Sanwo', text: 'Chioma, thank you. Please reply with the street number and a landmark so we can book the rider.', atMinutesAgo: 60 },
@@ -52,7 +56,7 @@ const CONVERSATIONS: SeedConversation[] = [
   },
   {
     id: 'c4', customer: 'Tunde Bakare', contact: 'whatsapp:+2340000000004',
-    channel: 'WHATSAPP', status: 'FOLLOW_UP', assigneeId: AGENT_ID, sortOrder: 4,
+    channel: 'WHATSAPP', status: 'FOLLOW_UP', assignee: 'AGENT', sortOrder: 4,
     messages: [
       { kind: 'CUSTOMER', who: 'Tunde Bakare', text: 'Paddy, has the wholesale crate of tomatoes arrived from Mile 12?', atMinutesAgo: 1560 },
       { kind: 'STAFF', who: 'Funke Bello', text: 'Tunde, the truck is due this afternoon. I will message you as soon as we offload.', atMinutesAgo: 1500 },
@@ -60,7 +64,7 @@ const CONVERSATIONS: SeedConversation[] = [
   },
   {
     id: 'c5', customer: 'Amaka Eze', contact: 'instagram:@amaka.eze',
-    channel: 'INSTAGRAM', status: 'ESCALATED', assigneeId: OWNER_ID, sortOrder: 5,
+    channel: 'INSTAGRAM', status: 'ESCALATED', assignee: 'OWNER', sortOrder: 5,
     messages: [
       { kind: 'CUSTOMER', who: 'Amaka Eze', text: 'You sent royal blue instead of mustard. I need a replacement today before the event.', atMinutesAgo: 200 },
       { kind: 'STAFF', who: 'Funke Bello', text: 'Amaka, I am sorry. I have escalated this so the owner can approve a same-day swap.', atMinutesAgo: 180 },
@@ -68,14 +72,14 @@ const CONVERSATIONS: SeedConversation[] = [
   },
   {
     id: 'c6', customer: 'David Mensah', contact: 'david.mensah@example.com',
-    channel: 'EMAIL', status: 'NEW', assigneeId: null, sortOrder: 6,
+    channel: 'EMAIL', status: 'NEW', assignee: null, sortOrder: 6,
     messages: [
       { kind: 'CUSTOMER', who: 'David Mensah', text: 'I run a shop in Accra and need 40kg of unrefined shea butter. What is your wholesale rate and shipping time?', atMinutesAgo: 240 },
     ],
   },
   {
     id: 'c7', customer: 'Halima Bello', contact: 'whatsapp:+2340000000007',
-    channel: 'WHATSAPP', status: 'RESOLVED', assigneeId: OWNER_ID, sortOrder: 7,
+    channel: 'WHATSAPP', status: 'RESOLVED', assignee: 'OWNER', sortOrder: 7,
     messages: [
       { kind: 'CUSTOMER', who: 'Halima Bello', text: 'Has my wrapper left the shop?', atMinutesAgo: 2900 },
       { kind: 'STAFF', who: 'Ayo Sanwo', text: 'Yes Halima, GIG is collecting it at 3pm. Tracking will follow.', atMinutesAgo: 2800 },
@@ -84,14 +88,14 @@ const CONVERSATIONS: SeedConversation[] = [
   },
   {
     id: 'c8', customer: 'Ruth Boateng', contact: 'ruth.boateng@example.com',
-    channel: 'EMAIL', status: 'IN_PROGRESS', assigneeId: AGENT_ID, sortOrder: 8,
+    channel: 'EMAIL', status: 'IN_PROGRESS', assignee: 'AGENT', sortOrder: 8,
     messages: [
       { kind: 'CUSTOMER', who: 'Ruth Boateng', text: 'Please change my Saturday pickup to Monday morning. I will be travelling.', atMinutesAgo: 300 },
     ],
   },
   {
     id: 'c9', customer: 'Adaeze Nwosu', contact: 'tiktok:@adaeze.nwosu',
-    channel: 'TIKTOK', status: 'NEW', assigneeId: null, sortOrder: 9,
+    channel: 'TIKTOK', status: 'NEW', assignee: null, sortOrder: 9,
     messages: [
       { kind: 'CUSTOMER', who: 'Adaeze Nwosu', text: 'Hello! I saw your TikTok video. Is the skincare bundle still on promo?', atMinutesAgo: 32 },
     ],
@@ -112,23 +116,26 @@ async function main() {
     },
   });
 
-  const owner = await prisma.user.upsert({
-    where: { workspaceId_email: { workspaceId: workspace.id, email: 'owner@example.com' } },
-    update: {},
-    create: {
-      id: OWNER_ID, workspaceId: workspace.id, name: 'Ayo Sanwo',
-      email: 'owner@example.com', role: 'OWNER',
+  // Recreate demo staff through Better Auth so credential accounts exist.
+  await prisma.user.deleteMany({
+    where: { workspaceId: workspace.id, email: { in: [OWNER_EMAIL, AGENT_EMAIL] } },
+  });
+  const ownerSignup = await auth.api.signUpEmail({
+    headers: new Headers(),
+    body: {
+      name: 'Ayo Sanwo', email: OWNER_EMAIL, password: OWNER_PASSWORD,
+      workspaceId: workspace.id, role: 'OWNER',
     },
   });
-
-  const agent = await prisma.user.upsert({
-    where: { workspaceId_email: { workspaceId: workspace.id, email: 'agent@example.com' } },
-    update: {},
-    create: {
-      id: AGENT_ID, workspaceId: workspace.id, name: 'Funke Bello',
-      email: 'agent@example.com', role: 'AGENT',
+  const agentSignup = await auth.api.signUpEmail({
+    headers: new Headers(),
+    body: {
+      name: 'Funke Bello', email: AGENT_EMAIL, password: AGENT_PASSWORD,
+      workspaceId: workspace.id, role: 'AGENT',
     },
   });
+  const owner = { id: ownerSignup.user.id };
+  const agent = { id: agentSignup.user.id };
 
   // Deterministic demo dataset: clear all demo workspace conversations,
   // customers and reminders first (including rows from earlier seeds), then recreate.
@@ -152,7 +159,7 @@ async function main() {
         channel: conv.channel,
         status: conv.status,
         sortOrder: conv.sortOrder,
-        assigneeId: conv.assigneeId,
+        assigneeId: conv.assignee === 'OWNER' ? owner.id : conv.assignee === 'AGENT' ? agent.id : null,
         preview: last.text,
         messages: {
           create: conv.messages.map((m, i) => ({

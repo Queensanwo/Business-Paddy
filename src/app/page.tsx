@@ -1,10 +1,16 @@
 'use client';
 
 import { useInbox } from '@/hooks/useInbox';
+import { authClient } from '@/lib/auth-client';
 import { Navigation } from '@/components/Navigation';
 import { InboxList } from '@/components/InboxList';
 import { MetricCards } from '@/components/MetricCards';
 import { ConversationThread } from '@/components/ConversationThread';
+
+async function signOut() {
+  await authClient.signOut();
+  window.location.href = '/sign-in';
+}
 
 export default function InboxPage() {
   const {
@@ -83,6 +89,7 @@ export default function InboxPage() {
             <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>Today · Lagos Market Hub</div>
           </div>
           <button className="chip" id="backBtn" type="button" onClick={goBackToList}>Inbox list</button>
+          <button className="chip" type="button" onClick={signOut}>Sign out</button>
         </header>
         <MetricCards
           total={conversations.length}
