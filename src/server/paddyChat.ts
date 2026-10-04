@@ -2,10 +2,17 @@ import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/db';
 import { InboxApiError } from '@/server/inboxStore';
 
+export interface GuestAttachment {
+  id: string;
+  fileName: string;
+  mimeType: string;
+}
+
 export interface GuestMessage {
   who: string;
   role: 'customer' | 'staff';
   text: string;
+  attachments: GuestAttachment[];
 }
 
 export interface GuestThread {
@@ -34,7 +41,10 @@ export async function threadByToken(token: string) {
     include: {
       workspace: { select: { id: true, name: true } },
       customer: true,
-      messages: { orderBy: { createdAt: 'asc' } },
+      messages: {
+        orderBy: { createdAt: 'asc' },
+        include: { attachments: { select: { id: true, fileName: true, mimeType: true } } },
+      },
     },
   });
   if (!conv || conv.channel !== 'PADDY_CHAT') throw new InboxApiError(404, 'Chat link not found.');
@@ -54,6 +64,11 @@ function toGuestThread(
       who: m.senderName,
       role: m.kind === 'STAFF' ? ('staff' as const) : ('customer' as const),
       text: m.text,
+      attachments: (m.attachments ?? []).map((a) => ({
+        id: a.id,
+        fileName: a.fileName,
+        mimeType: a.mimeType,
+      })),
     })),
   };
 }
@@ -130,6 +145,57 @@ export async function postGuestReply(token: string, text: string): Promise<Guest
     }),
   ]);
   return toGuestThread(await threadByToken(token));
+}
+
+/** Guest voice note: stores the audio file and links it to a customer message. */
+export async function postGuestVoice(token: string, file: File): Promise<GuestThread> {
+  const { saveUpload } = await import('@/server/attachments');
+  if (!file.type.startsWith('audio/')) {
+    throw new InboxApiError(400, 'Only voice recordings can be sent here.');
+  }
+  const stored = await saveUpload(file);
+  const conv = await threadByToken(token);
+  const guestName = conv.customer?.name ?? 'Guest';
+  const message = await prisma.message.create({
+    data: {
+      conversationId: conv.id,
+      kind: 'CUSTOMER',
+      senderName: guestName,
+      text: '(Voice note)',
+      attachments: {
+        create: {
+          fileName: stored.fileName,
+          mimeType: stored.mimeType,
+          sizeBytes: stored.sizeBytes,
+          storageKey: stored.storageKey,
+        },
+      },
+    },
+  });
+  await prisma.conversation.update({
+    where: { id: conv.id },
+    data: {
+      preview: 'Sent a voice note',
+      ...(conv.status === 'RESOLVED' ? { status: 'IN_PROGRESS' as const } : {}),
+    },
+  });
+  return toGuestThread(await threadByToken(token));
+}
+
+/** Guest file download, scoped to the return-link token. */
+export async function guestFile(token: string, attachmentId: string): Promise<{ path: string; mimeType: string }> {
+  const { uploadPath } = await import('@/server/attachments');
+  const conv = await threadByToken(token);
+  const attachment = await prisma.attachment.findFirst({
+    where: { id: attachmentId, message: { conversationId: conv.id } },
+    include: { message: { select: { kind: true } } },
+  });
+  if (!attachment) throw new InboxApiError(404, 'File not found.');
+  if (attachment.message.kind !== 'CUSTOMER' && attachment.message.kind !== 'STAFF') {
+    throw new InboxApiError(404, 'File not found.');
+  }
+  if (!attachment.storageKey) throw new InboxApiError(404, 'File not found.');
+  return { path: uploadPath(attachment.storageKey), mimeType: attachment.mimeType };
 }
 
 /** Public business profile for the guest landing page. Nothing sensitive. */

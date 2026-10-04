@@ -1,11 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+interface GuestAttachment {
+  id: string;
+  fileName: string;
+  mimeType: string;
+}
 
 interface GuestMessage {
   who: string;
   role: 'customer' | 'staff';
   text: string;
+  attachments: GuestAttachment[];
 }
 
 interface GuestThread {
@@ -20,6 +27,10 @@ export default function GuestReturnPage({ params }: { params: { token: string } 
   const [error, setError] = useState('');
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [voiceMsg, setVoiceMsg] = useState('');
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [consent, setConsent] = useState(false);
@@ -35,6 +46,48 @@ export default function GuestReturnPage({ params }: { params: { token: string } 
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Chat unavailable.'));
   }, [params.token]);
+
+  async function toggleRecording() {
+    if (recording) {
+      recorderRef.current?.stop();
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setRecording(false);
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        if (blob.size === 0) return;
+        setVoiceMsg('Sending voice note…');
+        try {
+          const form = new FormData();
+          form.append('file', new File([blob], `voice-note.${blob.type.includes('mp4') ? 'm4a' : 'webm'}`, { type: blob.type }));
+          const res = await fetch(`/api/paddy-chat/thread/${params.token}/voice`, {
+            method: 'POST',
+            body: form,
+          });
+          const json = (await res.json()) as GuestThread & { error?: string };
+          if (!res.ok) throw new Error(json.error || 'Could not send.');
+          setThread(json);
+          setVoiceMsg('');
+        } catch (err) {
+          setVoiceMsg(err instanceof Error ? err.message : 'Could not send.');
+        }
+      };
+      recorderRef.current = recorder;
+      recorder.start();
+      setRecording(true);
+      setVoiceMsg('');
+    } catch {
+      setVoiceMsg('Microphone unavailable in this browser.');
+    }
+  }
 
   async function onReply(e: React.FormEvent) {
     e.preventDefault();
@@ -93,9 +146,17 @@ export default function GuestReturnPage({ params }: { params: { token: string } 
                 <div key={i} className={`bubble ${m.role === 'staff' ? 'staff' : 'customer'}`}>
                   <div className="who">{m.who}</div>
                   {m.text}
+                  {(m.attachments ?? []).map((a) => (
+                    <div key={a.id} style={{ marginTop: '6px' }}>
+                      <div className="who">{a.fileName}</div>
+                      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                      <audio controls preload="none" src={`/api/paddy-chat/thread/${params.token}/file/${a.id}`} style={{ maxWidth: '100%' }} />
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
+            {voiceMsg ? <div className="assignee">{voiceMsg}</div> : null}
             {thread.status === 'Resolved' && !contactDone ? (
               <form onSubmit={onSaveContact} style={{ display: 'flex', flexDirection: 'column', gap: '8px', border: '1px solid var(--line)', borderRadius: '12px', padding: '10px 12px' }}>
                 <strong style={{ fontSize: '0.85rem' }}>Stay in touch? (optional)</strong>
@@ -128,7 +189,12 @@ export default function GuestReturnPage({ params }: { params: { token: string } 
                 required
                 style={{ border: '1px solid var(--line)', borderRadius: '12px', padding: '10px 12px', background: 'var(--off-white)', color: 'var(--ink)', minHeight: '56px' }}
               />
-              <button className="send" type="submit" disabled={busy}>Send</button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <button className="send" type="submit" disabled={busy}>Send</button>
+                <button className="chip" type="button" onClick={toggleRecording}>
+                  {recording ? '● Stop' : '🎙 Voice'}
+                </button>
+              </div>
             </form>
           </>
         ) : null}
