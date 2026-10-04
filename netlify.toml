@@ -1,0 +1,22 @@
+# Netlify deploys the Next.js app (App Router + API routes), NOT the old
+# index.html/design.html prototypes at the repo root. Those files remain only
+# as assessment history and are never published.
+#
+# Required Netlify site settings (dashboard: Site settings > Environment
+# variables) — local .env values are gitignored and never uploaded:
+#   DATABASE_URL         PostgreSQL connection string (managed provider, SSL)
+#   BETTER_AUTH_SECRET   64-hex-char secret (generate a fresh one for production)
+#   BETTER_AUTH_URL      https://<your-site>.netlify.app
+#   PAYSTACK_SECRET_KEY  live or test key, depending on the deployment purpose
+#   RESEND_API_KEY       Resend key for invites, resets and notifications
+#   RESEND_FROM_EMAIL    verified sender, e.g. "Business Paddy <team@yourdomain.com>"
+
+[build]
+  command = "npx prisma migrate deploy && npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "20"
