@@ -128,6 +128,58 @@ export interface ReplyAttachment {
   sizeBytes: number;
 }
 
+/**
+ * Emails the guest when staff reply to a Paddy Chat thread. Only fires when
+ * the guest saved an email address with explicit consent. Failures never
+ * break the reply itself — they are logged only.
+ */
+async function notifyGuestReply(conversationId: string): Promise<void> {
+  try {
+    const key = process.env.RESEND_API_KEY;
+    if (!key) return;
+    const { Resend } = await import('resend');
+    const conv = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        customer: true,
+        workspace: { select: { id: true, name: true } },
+      },
+    });
+    if (!conv || conv.channel !== 'PADDY_CHAT' || !conv.guestToken) return;
+    if (!conv.customer?.contactConsentAt) return;
+    const email = (conv.customer.contactDetail ?? '')
+      .split(',')
+      .map((p) => p.trim())
+      .find((p) => p.toLowerCase().startsWith('email:'))
+      ?.slice('email:'.length)
+      .trim();
+    if (!email) return;
+    const from = process.env.RESEND_FROM_EMAIL ?? 'Business Paddy <onboarding@resend.dev>';
+    const base = process.env.BETTER_AUTH_URL ?? 'http://localhost:3000';
+    const { error } = await new Resend(key).emails.send({
+      from,
+      to: email,
+      subject: `New reply from ${conv.workspace.name}`,
+      html:
+        `<p>Hello ${conv.customer.name ?? 'there'},</p>` +
+        `<p>${conv.workspace.name} has replied to your chat.</p>` +
+        `<p><a href="${base}/chat/return/${conv.guestToken}">Open your conversation</a></p>` +
+        `<p>Keep this link private — it opens your chat history.</p>`,
+    });
+    if (error) throw new Error(error.message);
+    await prisma.auditLog.create({
+      data: {
+        workspaceId: conv.workspaceId,
+        action: 'paddy_chat.reply_notified',
+        entityType: 'Conversation',
+        entityId: conversationId,
+      },
+    });
+  } catch (e) {
+    console.error('guest reply notification failed', e);
+  }
+}
+
 export async function saveReply(
   workspaceId: string,
   conversationId: string,
@@ -194,6 +246,8 @@ export async function saveReply(
       },
     }),
   ]);
+
+  await notifyGuestReply(conversationId);
 
   return snapshotOf(await loadRows(workspaceId));
 }
