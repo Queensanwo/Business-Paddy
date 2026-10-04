@@ -27,7 +27,7 @@ function clean(value: unknown, max: number): string {
   return trimmed;
 }
 
-async function threadByToken(token: string) {
+export async function threadByToken(token: string) {
   if (!token || !/^[0-9a-f]{64}$/.test(token)) throw new InboxApiError(404, 'Chat link not found.');
   const conv = await prisma.conversation.findUnique({
     where: { guestToken: token },

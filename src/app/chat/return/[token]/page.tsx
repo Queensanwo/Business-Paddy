@@ -20,6 +20,11 @@ export default function GuestReturnPage({ params }: { params: { token: string } 
   const [error, setError] = useState('');
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [consent, setConsent] = useState(false);
+  const [contactMsg, setContactMsg] = useState('');
+  const [contactDone, setContactDone] = useState(false);
 
   useEffect(() => {
     fetch(`/api/paddy-chat/thread/${params.token}`)
@@ -52,6 +57,24 @@ export default function GuestReturnPage({ params }: { params: { token: string } 
     setBusy(false);
   }
 
+  async function onSaveContact(e: React.FormEvent) {
+    e.preventDefault();
+    setContactMsg('');
+    try {
+      const res = await fetch(`/api/paddy-chat/thread/${params.token}/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: contactEmail, phone: contactPhone, consent }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(json.error || 'Could not save.');
+      setContactDone(true);
+      setContactMsg('Saved. The business can now reach you about this chat.');
+    } catch (err) {
+      setContactMsg(err instanceof Error ? err.message : 'Could not save.');
+    }
+  }
+
   return (
     <div className="auth-wrap">
       <div className="auth-card" style={{ width: 'min(560px, 100%)' }}>
@@ -73,6 +96,30 @@ export default function GuestReturnPage({ params }: { params: { token: string } 
                 </div>
               ))}
             </div>
+            {thread.status === 'Resolved' && !contactDone ? (
+              <form onSubmit={onSaveContact} style={{ display: 'flex', flexDirection: 'column', gap: '8px', border: '1px solid var(--line)', borderRadius: '12px', padding: '10px 12px' }}>
+                <strong style={{ fontSize: '0.85rem' }}>Stay in touch? (optional)</strong>
+                <input
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  placeholder="Email address"
+                  style={{ border: '1px solid var(--line)', borderRadius: '8px', padding: '8px 10px', background: 'var(--off-white)', color: 'var(--ink)' }}
+                />
+                <input
+                  value={contactPhone}
+                  onChange={(e) => setContactPhone(e.target.value)}
+                  placeholder="Phone number"
+                  style={{ border: '1px solid var(--line)', borderRadius: '8px', padding: '8px 10px', background: 'var(--off-white)', color: 'var(--ink)' }}
+                />
+                <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '0.8rem' }}>
+                  <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+                  I agree the business may contact me about this chat.
+                </label>
+                {contactMsg ? <div className="assignee">{contactMsg}</div> : null}
+                <button className="chip" type="submit">Save contact</button>
+              </form>
+            ) : null}
+            {contactDone && contactMsg ? <div className="assignee">{contactMsg}</div> : null}
             <form onSubmit={onReply} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px' }}>
               <textarea
                 value={text}

@@ -135,6 +135,9 @@ model Customer {
   workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   name          String
   contactDetail String?
+  // Consent for follow-up contact (1F). Set only when the guest explicitly
+  // opts in after a resolved chat or completed deal. Never assumed.
+  contactConsentAt DateTime?
   createdAt     DateTime @default(now())
 
   conversations Conversation[]
