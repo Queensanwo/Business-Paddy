@@ -12,7 +12,7 @@
 #   RESEND_FROM_EMAIL    verified sender, e.g. "Business Paddy <team@yourdomain.com>"
 
 [build]
-  command = "npx prisma migrate deploy && npm run build"
+  command = "npx prisma generate && npx prisma migrate deploy && npm run build"
   publish = ".next"
 
 [[plugins]]
