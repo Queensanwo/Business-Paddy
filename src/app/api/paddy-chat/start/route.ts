@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { startGuestChat } from '@/server/paddyChat';
 import { InboxApiError } from '@/server/inboxStore';
+import { checkRateLimit } from '@/server/rateLimit';
 
 export async function POST(req: Request) {
   try {
+    checkRateLimit(req, 'paddy-start', 10, 3600000);
     const body = (await req.json()) as { workspaceId?: unknown; name?: unknown; text?: unknown };
     if (typeof body.workspaceId !== 'string') {
       return NextResponse.json({ error: 'A business is required.' }, { status: 400 });

@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { postGuestReply } from '@/server/paddyChat';
 import { InboxApiError } from '@/server/inboxStore';
+import { checkRateLimit } from '@/server/rateLimit';
 
 export async function POST(req: Request, { params }: { params: { token: string } }) {
   try {
+    checkRateLimit(req, 'paddy-reply', 30, 3600000);
     const body = (await req.json()) as { text?: unknown };
     if (typeof body.text !== 'string') {
       return NextResponse.json({ error: 'Message text is required.' }, { status: 400 });

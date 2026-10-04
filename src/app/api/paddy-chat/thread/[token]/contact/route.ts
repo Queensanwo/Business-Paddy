@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { threadByToken } from '@/server/paddyChat';
 import { InboxApiError } from '@/server/inboxStore';
+import { checkRateLimit } from '@/server/rateLimit';
 
 function cleanEmail(value: unknown): string | null {
   if (typeof value !== 'string') return null;
@@ -25,6 +26,7 @@ function cleanPhone(value: unknown): string | null {
 
 export async function POST(req: Request, { params }: { params: { token: string } }) {
   try {
+    checkRateLimit(req, 'paddy-contact', 10, 3600000);
     const conv = await threadByToken(params.token);
     if (conv.status !== 'RESOLVED') {
       return NextResponse.json(

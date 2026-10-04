@@ -20,10 +20,21 @@ interface CustomerDetail extends CustomerSummary {
   conversations: Conversation[];
 }
 
+interface MatchCandidate {
+  customerId: string;
+  customerName: string;
+  contactDetail: string | null;
+  matchScore: number;
+  matchReasons: string[];
+}
+
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<CustomerDetail | null>(null);
+  const [matches, setMatches] = useState<MatchCandidate[]>([]);
+  const [matchMsg, setMatchMsg] = useState('');
+  const [matchBusy, setMatchBusy] = useState(false);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isListMode, setIsListMode] = useState(true);
@@ -46,9 +57,29 @@ export default function CustomersPage() {
       .catch(() => setLoadState('error'));
   }, []);
 
+  function refreshCustomers(clearSelection: boolean) {
+    fetch('/api/customers')
+      .then((res) => {
+        if (!res.ok) throw new Error('Customers request failed.');
+        return res.json();
+      })
+      .then((data) => {
+        const list = data as CustomerSummary[];
+        setCustomers(list);
+        if (clearSelection) {
+          setSelectedId(null);
+          setDetail(null);
+          setMatches([]);
+        }
+      })
+      .catch(() => {});
+  }
+
   function selectCustomer(id: string) {
     setSelectedId(id);
     setDetail(null);
+    setMatches([]);
+    setMatchMsg('');
     setIsListMode(false);
     setIsMobileMenuOpen(false);
     fetch(`/api/customers/${id}`)
@@ -62,6 +93,54 @@ export default function CustomersPage() {
       })
       .then((data) => setDetail(data as CustomerDetail))
       .catch(() => {});
+    fetch(`/api/customers/${id}/matches`)
+      .then((res) => {
+        if (!res.ok) throw new Error('Matches request failed.');
+        return res.json();
+      })
+      .then((data) => setMatches((data as { matches: MatchCandidate[] }).matches))
+      .catch(() => setMatches([]));
+  }
+
+  const canManageMatches = user?.role === 'OWNER' || user?.role === 'MANAGER';
+
+  async function confirmMatch(matchCustomerId: string) {
+    if (!selectedId) return;
+    setMatchBusy(true);
+    setMatchMsg('');
+    try {
+      const res = await fetch('/api/customers/match', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'confirm', primaryCustomerId: selectedId, matchCustomerId }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(json.error || 'Could not merge.');
+      setMatchMsg('Merged. Histories now appear under one customer.');
+      refreshCustomers(true);
+    } catch (err) {
+      setMatchMsg(err instanceof Error ? err.message : 'Could not merge.');
+    }
+    setMatchBusy(false);
+  }
+
+  async function splitConversation(conversationId: string) {
+    setMatchBusy(true);
+    setMatchMsg('');
+    try {
+      const res = await fetch('/api/customers/match', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'separate', conversationIds: [conversationId] }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(json.error || 'Could not split.');
+      setMatchMsg('Split. The conversation moved to its own customer record.');
+      refreshCustomers(true);
+    } catch (err) {
+      setMatchMsg(err instanceof Error ? err.message : 'Could not split.');
+    }
+    setMatchBusy(false);
   }
 
   if (loadState === 'loading') {
@@ -158,6 +237,33 @@ export default function CustomersPage() {
         <div className="messages" style={{ flex: 1, overflow: 'auto' }}>
           {!selectedId ? <p className="assignee">Choose a customer from the list.</p> : null}
           {selectedId && !detail ? <p className="assignee">Loading history…</p> : null}
+          {detail && matches.length > 0 ? (
+            <div className="thread-wrap" style={{ margin: '0 0 12px' }}>
+              <div className="thread-head">
+                <div>
+                  <h3>Suggested matches</h3>
+                  <div className="assignee">Same person on another channel? Nothing merges automatically.</div>
+                </div>
+              </div>
+              <div className="messages">
+                {matches.map((m) => (
+                  <div key={m.customerId} className="bubble customer" style={{ maxWidth: '100%' }}>
+                    <div className="who">{m.customerName} · {m.matchScore}% match</div>
+                    {m.matchReasons.join(' · ')}
+                    {canManageMatches ? (
+                      <div style={{ marginTop: '8px' }}>
+                        <button className="chip" type="button" disabled={matchBusy} onClick={() => confirmMatch(m.customerId)}>
+                          Merge into {detail.name}
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+                {matchMsg ? <p className="assignee">{matchMsg}</p> : null}
+              </div>
+            </div>
+          ) : null}
+          {detail && matches.length === 0 && matchMsg ? <p className="assignee">{matchMsg}</p> : null}
           {detail?.conversations.map((conv) => (
             <div key={conv.id} className="thread-wrap" style={{ margin: '0 0 12px' }}>
               <div className="thread-head">
@@ -168,6 +274,14 @@ export default function CustomersPage() {
                 <div>
                   <Badge variant={conv.channel}>{channelLabel[conv.channel]}</Badge>{' '}
                   <Badge variant="status" statusType={conv.statusClass}>{conv.status}</Badge>
+                  {canManageMatches ? (
+                    <>
+                      {' '}
+                      <button className="chip" type="button" disabled={matchBusy} onClick={() => splitConversation(conv.id)}>
+                        Split out
+                      </button>
+                    </>
+                  ) : null}
                 </div>
               </div>
               <div className="messages">

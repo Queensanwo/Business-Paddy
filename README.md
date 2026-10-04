@@ -170,6 +170,8 @@ success message plus the recorded payment row.
 | 1F | 🟡 Contact saving (built + tested, uncommitted): after a resolved Paddy Chat, guests may optionally share email/phone with explicit consent ticked; validated server-side, consent timestamped, visible in staff customer records; unresolved chats, missing consent and invalid contacts rejected; API `POST /api/paddy-chat/thread/[token]/contact` |
 | Team | 🟡 Team page (built + tested, uncommitted): owner card, invite form (name/email/role + Send Invitation, one-time temp password), staff list from PostgreSQL; APIs `GET/POST /api/team` (owner/manager only, 403 otherwise) |
 | Settings | 🟡 Settings page (built + tested, uncommitted): editable business name/industry saved to PostgreSQL (`GET/PUT /api/settings`), owner email shown; channel section honestly marked Not connected yet |
+| 1D matching | ✅ Customer matching (FR14/FR15): cross-channel suggestions by name/phone/email overlap, nothing auto-merges; owner/manager confirm with audit, agents view-only; wrong merges split out; workspace-scoped (cross-business reads 404); UI in customer detail |
+| Abuse guard | ✅ Rate limiting on public guest + invite endpoints (per IP, 429 beyond limit) |
 | 2 | Conversation Management, Team & Permissions |
 | 3 | Reply Tools, Automation & AI |
 | 4 | Customer Intelligence, Cross-Channel & Branding |
