@@ -31,7 +31,7 @@ export function Navigation({
           </div>
         </div>
         <nav className="nav-links">
-          <a className={active === 'inbox' ? 'active' : ''} href="/">Inbox{totalCount > 0 ? <span className="count">{totalCount}</span> : null}</a>
+          <a className={active === 'inbox' ? 'active' : ''} href="/inbox">Inbox{totalCount > 0 ? <span className="count">{totalCount}</span> : null}</a>
           <a className={active === 'customers' ? 'active' : ''} href="/customers">Customers</a>
           <a className={active === 'team' ? 'active' : ''} href="/team">Team</a>
           <a className={active === 'settings' ? 'active' : ''} href="/settings">Settings</a>

@@ -154,7 +154,7 @@ export default function SettingsPage() {
             <strong>Settings</strong>
             <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>Business profile and channels</div>
           </div>
-          <a className="chip" href="/">Back to Inbox</a>
+          <a className="chip" href="/inbox">Back to Inbox</a>
         </header>
         <div className="metrics metrics-single">
           <article className="card received">

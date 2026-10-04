@@ -22,7 +22,7 @@ export default function SignInPage() {
       setError('Sign in failed. Check your email and password.');
       return;
     }
-    router.push('/');
+    router.push('/inbox');
   }
 
   return (

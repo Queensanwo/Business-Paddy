@@ -37,7 +37,7 @@ export default function SignUpPage() {
         role: 'OWNER',
       } as Parameters<typeof authClient.signUp.email>[0]);
       if (err) throw new Error('Owner account creation failed.');
-      router.push('/');
+      router.push('/inbox');
     } catch {
       setError('Sign up failed. The email may already be registered.');
       setBusy(false);
