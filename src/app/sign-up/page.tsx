@@ -12,6 +12,7 @@ export default function SignUpPage() {
   const [ownerName, setOwnerName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState<'DEMO' | 'LIVE'>('DEMO');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -83,7 +84,19 @@ export default function SignUpPage() {
         </label>
         <label className="auth-field">
           Password (8+ characters)
-          <input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
+          <span style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px', alignItems: 'center' }}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              required
+              minLength={8}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+            <button className="chip" type="button" onClick={() => setShowPassword((v) => !v)}>
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
+          </span>
         </label>
         <div className="auth-field">
           <span>Mode</span>

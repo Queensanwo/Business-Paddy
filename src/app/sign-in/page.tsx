@@ -9,6 +9,7 @@ export default function SignInPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -55,7 +56,18 @@ export default function SignInPage() {
         </label>
         <label className="auth-field">
           Password
-          <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+          <span style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px', alignItems: 'center' }}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+            <button className="chip" type="button" onClick={() => setShowPassword((v) => !v)}>
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
+          </span>
         </label>
         {error ? <p className="auth-error">{error}</p> : null}
         <button className="send" type="submit" disabled={busy} style={{ width: '100%' }}>

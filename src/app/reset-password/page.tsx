@@ -7,6 +7,7 @@ import { authClient } from '@/lib/auth-client';
 export default function ResetPasswordPage() {
   const [token, setToken] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -48,14 +49,19 @@ export default function ResetPasswordPage() {
           <>
             <label className="auth-field">
               New password (8+ characters)
-              <input
-                type="password"
-                required
-                minLength={8}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-              />
+              <span style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px', alignItems: 'center' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  minLength={8}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+                <button className="chip" type="button" onClick={() => setShowPassword((v) => !v)}>
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </span>
             </label>
             {error ? <p className="auth-error">{error}</p> : null}
             <button className="send" type="submit" disabled={busy} style={{ width: '100%' }}>
