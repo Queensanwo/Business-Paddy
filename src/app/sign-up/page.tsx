@@ -36,10 +36,21 @@ export default function SignUpPage() {
         workspaceId: ws.id,
         role: 'OWNER',
       } as Parameters<typeof authClient.signUp.email>[0]);
-      if (err) throw new Error('Owner account creation failed.');
+      if (err) {
+        throw new Error(
+          typeof (err as { message?: unknown }).message === 'string' &&
+            (err as { message: string }).message
+            ? (err as { message: string }).message
+            : 'Owner account creation failed. If the email is new, the database may be waking up — wait a minute and try again.',
+        );
+      }
       router.push('/inbox');
-    } catch {
-      setError('Sign up failed. The email may already be registered.');
+    } catch (e) {
+      setError(
+        e instanceof Error && e.message
+          ? e.message
+          : 'Sign up failed. If the email is new, the database may be waking up — wait a minute and try again.',
+      );
       setBusy(false);
     }
   }

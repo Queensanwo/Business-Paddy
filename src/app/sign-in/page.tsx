@@ -16,10 +16,24 @@ export default function SignInPage() {
     e.preventDefault();
     setError('');
     setBusy(true);
-    const { error: err } = await authClient.signIn.email({ email, password });
+    let signInError = '';
+    try {
+      const { error: err } = await authClient.signIn.email({ email, password });
+      if (err) {
+        const message =
+          typeof (err as { message?: unknown }).message === 'string' &&
+          (err as { message: string }).message
+            ? (err as { message: string }).message
+            : '';
+        signInError = message || 'Sign in failed. Check your email and password.';
+      }
+    } catch {
+      signInError =
+        'Could not reach the sign-in service. The database may be waking up — wait a minute and try again.';
+    }
     setBusy(false);
-    if (err) {
-      setError('Sign in failed. Check your email and password.');
+    if (signInError) {
+      setError(signInError);
       return;
     }
     router.push('/inbox');

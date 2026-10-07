@@ -5,7 +5,7 @@ First release product definition
 | Document type | Non technical product requirements document |
 | :---- | :---- |
 | **Status** | Initial product definition |
-| **Version** | 1.1 |
+| **Version** | 1.2 |
 
 **Purpose**
 
@@ -182,6 +182,27 @@ Each business can customise its identity:
 - Uploads validated securely; image proportions preserved
 - Branding persists across sessions and devices; applies only to that business
 - Navigation and layout remain consistent across themes
+
+# **Public Landing Page**
+
+Business Paddy has a public landing page. Keep it and its current royal blue, navy and white design, headline, navigation, benefit sections and fictional product preview. The preview must keep using fictional data and must not imply that unfinished integrations are working.
+
+# **Business Website Front**
+
+Each business gets its own professional customer-facing page that its owner maintains:
+- The owner can update the business name, logo, description, products or services, opening hours and contact details.
+- Customers clearly see which business they are contacting and have an easy way to start a conversation (link into Paddy Chat guest flow).
+- Private customer information and conversations must never appear publicly.
+- Theme customisation stays a paid feature controlled by the owner or an authorised admin (see Business Branding).
+
+# **Business AI Helper**
+
+Each business may provide approved information — FAQs, prices, services and policies — for its own AI helper:
+- Start with suggested replies that the owner or staff reviews before sending.
+- The helper must use only that business's approved information. It must not invent prices, policies or promises.
+- When information is missing, it must ask for clarification or hand the question to a person.
+- Private staff notes and customer records must never appear in customer replies.
+- General AI guardrails still apply (see Ethics, Privacy and Business Verification, section 4).
 
 # **First Use Experience**
 
@@ -503,8 +524,10 @@ The first release will be successful when businesses can adopt it quickly and ha
 * Role permissions prevent unauthorised conversation and report access.  
 * Saved replies, AI drafts, macros and approved automatic replies behave according to owner controls.  
 * The owner dashboard reflects conversation and staff activity accurately.  
-* Mobile and web users see the same current conversation state.  
+* Mobile and web users see the same current conversation state.
 * Pilot users can complete the main workflow with minimal guidance.
+* Two different businesses confirm neither can access the other's private information, files or conversations — even through a copied link.
+* The AI helper is checked to confirm it cannot reveal another business's information.
 
 # **Risks and Product Responses**
 
@@ -542,6 +565,28 @@ The following decisions should be validated before commercial launch. They do no
 4\.  Confirm channel access and define the exact supported interaction for each first release channel.
 
 5\.  Use research findings to set pricing, plan limits and the final first release backlog.
+
+# **Build Status (honest)**
+
+## Already built and checked
+- Shared inbox with filters, conversation view, mock replies and answered/unanswered counts; TikTok channel; tested reply-counting logic.
+- PostgreSQL storage with migrations and seed; inbox reading and writing through the API; replies and counts survive refresh and restart.
+- Owner login, logout, workspaces, staff invitation by email, password reset.
+- Customers page with history; customer matching with confirmation and split; per-IP rate limiting.
+- Team and settings pages; Paystack test checkout (code tested, no live payment test); guest Paddy Chat with return links, voice notes, contact saving and reply notifications.
+- Public landing page; Netlify deployment config (production build compiles).
+
+## Built but still needs checking
+- Online deployment end to end (inbox unreachable at last check; database connection under investigation).
+- Live Paystack payment with a real test card.
+- Live invitation and reset emails to a permitted recipient.
+- Guest voice notes on a device with a microphone.
+
+## Planned but not built
+- Business website front; business AI helper; two-business separation checks.
+- Phase 2 conversation lifecycle UI and enforcement; Phases 3–6 remaining items.
+
+Nothing is marked complete just because it is documented here.
 
 # **Implementation Plan**
 
@@ -650,6 +695,7 @@ The following decisions should be validated before commercial launch. They do no
 - **Human review required by default for AI replies**; sensitive replies require configured human approval
 - Manual replying remains available if AI fails
 - **AI ethics (implemented in mock)**: AI-generated label in composer, review-before-send default, sensitive-reply approval gate, manual fallback, business-info guardrails (no invented prices/policies)
+- **Business AI helper (planned, see Business AI Helper)**: per-business approved information (FAQs, prices, services, policies); suggested replies from approved information only; clarify-or-handoff when information is missing; no staff notes or customer records in replies; cross-business leakage checks
 - **Missing in Phase 3**: real AI integration, configurable sensitive-reply rules, AI usage audit trail, prompt-injection protections
 
 ## Phase 4: Customer Intelligence, Cross-Channel & Branding
@@ -664,6 +710,7 @@ The following decisions should be validated before commercial launch. They do no
 - **Custom accent colours** with readability checks; optional logo colour suggestions (user approval required)
 - Logo upload does not auto-change theme; secure validation, proportions preserved
 - Branding persists across sessions/devices; per-business; consistent navigation/layout across themes
+- **Business website front (planned, see Business Website Front)**: per-business public page with owner-maintained name, logo, description, products/services, hours and contact; clear business identity with start-conversation entry; no private data public; paid theme customisation
 - **Privacy controls (mocked)**: consent/opt-out per customer, export/correction/deletion request UI, retention period per data type
 - **Missing in Phase 4**: real reminder persistence, real export/deletion execution, automated retention enforcement
 
@@ -701,6 +748,7 @@ The following decisions should be validated before commercial launch. They do no
   - AI ethics: business-info guardrails enforced, review-before-send default, sensitive-reply approval, manual fallback, AI-generated labelling
   - Reminders: internal-only enforcement, in-app/staff notifications linked to conversation/task
   - Accountability: Acceptable Use Policy, privacy notice, abuse-reporting process, suspension process, appeal process published; legal/platform requirements flagged for review; no overclaims on scam/ban/hack prevention
+- **Two-business separation checks**: neither business can access the other's private information, files or conversations, even through copied links; AI helper cannot reveal another business's information
 - Distinct interfaces: landing page, sign-up/in, business setup, working inbox, business settings, future website builder (separate)
 - **Missing in Phase 6**: legal review of all policies, penetration testing, incident response drills, ongoing compliance monitoring, third-party audit
 
@@ -743,8 +791,9 @@ Business Paddy is designed to help businesses manage customer conversations — 
 
 ## 3. Privacy and Security
 
-- Use role-based access for owners, managers and staff (least privilege; owners control delegation).
-- Keep each business's data strictly separate — no cross-business access.
+- Use role-based access for owners, managers and staff (least privilege; owners control delegation). Staff only access information their role permits.
+- Keep each business's data strictly separate — no cross-business access. Each business's customers, conversations, files, staff, settings and AI information stay private to that business, including through copied links.
+- Guests access only their own conversations through unguessable return links. Saved contact details are used for service follow-up, never promotions.
 - Support consent, opt-out handling, data export, correction and deletion requests where applicable.
 - Minimise collected data and define retention periods per data type.
 - Protect credentials, tokens, attachments and customer conversations (encryption at rest and in transit).
@@ -757,6 +806,7 @@ Business Paddy is designed to help businesses manage customer conversations — 
 - Sensitive replies require configured human approval.
 - Manual replying must remain available if AI is unavailable or fails.
 - Tell staff when content is AI-generated or AI-assisted (clear labelling in the composer).
+- The AI helper draws only on each business's approved information and never on another business's information (see Business AI Helper).
 
 ## 5. Reminders
 
@@ -894,10 +944,14 @@ Resumed and completed customer matching (FR14/FR15) after fixing a truncated fil
 
 Verified the matching [id] route parameter and imports, hardened workspace separation (target/merge/split lookups scoped, cross-business reads 404, self-merge rejected), and exposed Suggested matches with Merge plus per-thread Split out in the customer detail UI (owner/manager only). Tested 4/4 isolation and 3/3 post-hardening checks with test data cleaned; user workspace untouched. Committed.
 
+Fixed misleading auth errors found while diagnosing the live sign-up trouble: the sign-up page blamed the email for every failure, hiding database and network problems. Both sign-up and sign-in now show the server's real message, with a plain note to wait a minute when the database is waking up. Verified validation, wrong-password rejection and both pages locally. Uncommitted.
+
 Built the public landing page as the new homepage per the approved design: royal blue, navy and white styling, the exact headline and description, Features/How-it-works/Sign-in/Get-started navigation with section scrolling, the three benefit cards, a How-it-works strip, a navy call-to-action banner, and a hand-built inbox illustration labelled Product preview using only fictional data with no live-integration claims. Moved the inbox carefully to the protected /inbox route and updated its links (sidebar, sign-in/sign-up redirects, back button). Verified tsc clean, production build compiles with the homepage prerendered static, and all routes healthy; repaired a dev-server cache clash caused by building while it ran. The live Inbox-unavailable issue is separate and untouched. Uncommitted, no deployment.
 
 Instructed the AI to build the WhatsApp Cost & Safety Centre (1H) as a Settings section: 24-hour window, template and trust-tier explainers, safety checklist, unconnected status, official Meta docs links, estimates explicitly marked as estimates with no invented prices and no live usage claimed. Verified content renders, page 200, tsc clean. Uncommitted.
 
 Diagnosed Netlify serving the old HTML prototype: no netlify.toml existed, so Netlify published the repo root (index.html) with no build. Verified the production build compiles cleanly, then added netlify.toml pinning the Next.js build (migrate deploy + build, publish .next, Next.js runtime, Node 20) while keeping index.html/design.html as unpublished history. Flagged missing online requirements: managed PostgreSQL (not Supabase per steering), R2-compatible storage for uploads, and all production env vars. Uncommitted, no deployment triggered.
+
+Added the agreed documentation before further building (version 1.2): keep the landing page and its design; business separation covering customers, conversations, files, staff, settings and AI information with role-limited staff access; per-business website front with owner-maintained details and paid theme customisation; per-business AI helper using only approved information with clarify-or-handoff and no staff-note leakage; guest-only-own-conversations with follow-up-only contact saving; two-business separation checks in launch readiness and Phase 6; new plan items in Phases 3 and 4; and an honest build status separating built-and-checked, built-needs-checking and planned work. Documentation only, no code changes.
 
 Instructed the AI to build guest voice notes (1G): record/stop button on the guest return page, audio-only uploads validated server-side with rate limiting, playback through token-scoped file URLs, staff see and play guest voice messages in the inbox thread. Tested 6/6 (accept, linkage, guest playback, staff visibility, type rejection, bad-token 404) with test data cleaned; all pages 200, tsc clean, no errors. Uncommitted.
