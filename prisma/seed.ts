@@ -109,6 +109,13 @@ const CONVERSATIONS: SeedConversation[] = [
       { kind: 'CUSTOMER', who: 'Emeka Obi', text: 'Good afternoon! Do you deliver Ankara fabrics to Ikeja?', atMinutesAgo: 12 },
     ],
   },
+  {
+    id: 'c11', customer: 'Fatima Garba', contact: 'facebook:Fatima Garba',
+    channel: 'FACEBOOK', status: 'NEW', assignee: null, sortOrder: 11,
+    messages: [
+      { kind: 'CUSTOMER', who: 'Fatima Garba', text: 'Hello! I saw your page — do you have the red handbag in stock?', atMinutesAgo: 8 },
+    ],
+  },
 ];
 
 async function main() {

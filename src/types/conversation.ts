@@ -1,4 +1,4 @@
-export type Channel = 'whatsapp' | 'instagram' | 'email' | 'tiktok' | 'paddy_chat';
+export type Channel = 'whatsapp' | 'instagram' | 'email' | 'tiktok' | 'paddy_chat' | 'facebook';
 
 export type Status = 'New' | 'In progress' | 'Waiting for customer' | 'Follow up' | 'Escalated' | 'Resolved';
 
@@ -41,6 +41,7 @@ export const channelLabel: Record<Channel, string> = {
   email: 'Email',
   tiktok: 'TikTok',
   paddy_chat: 'Paddy Chat',
+  facebook: 'Facebook',
 };
 
 export const statusClassMap: Record<Status, string> = {

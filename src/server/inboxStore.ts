@@ -28,6 +28,7 @@ const channelToUi: Record<DbChannel, Channel | null> = {
   EMAIL: 'email',
   WEBSITE: null,
   PADDY_CHAT: 'paddy_chat',
+  FACEBOOK: 'facebook',
 };
 
 const statusToUi: Record<ConvStatus, { status: Status; statusClass: StatusClass }> = {
@@ -57,7 +58,7 @@ async function loadRows(workspaceId: string) {
   return prisma.conversation.findMany({
     where: {
       workspaceId,
-      channel: { in: ['WHATSAPP', 'INSTAGRAM', 'TIKTOK', 'EMAIL', 'PADDY_CHAT'] },
+      channel: { in: ['WHATSAPP', 'INSTAGRAM', 'TIKTOK', 'EMAIL', 'PADDY_CHAT', 'FACEBOOK'] },
     },
     orderBy: { sortOrder: 'asc' },
     include: {

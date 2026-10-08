@@ -2,7 +2,7 @@
 
 interface BadgeProps {
   children: React.ReactNode;
-  variant?: 'whatsapp' | 'instagram' | 'email' | 'tiktok' | 'paddy_chat' | 'status';
+  variant?: 'whatsapp' | 'instagram' | 'email' | 'tiktok' | 'paddy_chat' | 'facebook' | 'status';
   statusType?: 'new' | 'in-progress' | 'waiting' | 'follow-up' | 'escalated' | 'resolved';
   className?: string;
 }
