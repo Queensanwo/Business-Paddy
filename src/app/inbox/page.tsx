@@ -1,12 +1,13 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useInbox } from '@/hooks/useInbox';
 import { useSessionUser, roleLabel } from '@/hooks/useSessionUser';
 import { authClient } from '@/lib/auth-client';
 import { Navigation } from '@/components/Navigation';
 import { InboxList } from '@/components/InboxList';
 import { MetricCards } from '@/components/MetricCards';
-import { ConversationThread } from '@/components/ConversationThread';
+import { ConversationThread, AssignableStaff } from '@/components/ConversationThread';
 
 async function signOut() {
   await authClient.signOut();
@@ -24,6 +25,10 @@ export default function InboxPage() {
     setFilter,
     selectConversation,
     sendReply,
+    assignConversation,
+    addNote,
+    resolveConversation,
+    escalateConversation,
     toggleMobileMenu,
     closeMobileMenu,
     goBackToList,
@@ -31,8 +36,20 @@ export default function InboxPage() {
     isListMode,
   } = useInbox();
   const { user } = useSessionUser();
+  const [staff, setStaff] = useState<AssignableStaff[]>([]);
+
+  useEffect(() => {
+    fetch('/api/team')
+      .then((res) => {
+        if (!res.ok) throw new Error('No team access.');
+        return res.json();
+      })
+      .then((data) => setStaff((data as { users: AssignableStaff[] }).users ?? []))
+      .catch(() => setStaff([]));
+  }, []);
 
   const answered = conversations.length - unansweredIds.size;
+  const canAssignOthers = user?.role === 'OWNER' || user?.role === 'MANAGER';
 
   if (loadState === 'loading') {
     return (
@@ -104,6 +121,13 @@ export default function InboxPage() {
         <ConversationThread
           conversation={conversations.find(c => c.id === selectedId)}
           onSendReply={sendReply}
+          onAddNote={(text) => addNote(selectedId, text)}
+          onResolve={resolveConversation}
+          onEscalate={escalateConversation}
+          currentUserId={user?.id ?? null}
+          canAssignOthers={canAssignOthers}
+          staff={staff}
+          onAssign={assignConversation}
         />
       </section>
     </div>

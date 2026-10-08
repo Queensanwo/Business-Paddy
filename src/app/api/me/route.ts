@@ -12,6 +12,7 @@ export async function GET() {
     });
     if (!workspace) throw new InboxApiError(404, 'Workspace not found.');
     return NextResponse.json({
+      id: staff.userId,
       name: staff.name,
       email: staff.email,
       role: staff.role,

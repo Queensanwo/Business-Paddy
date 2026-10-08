@@ -18,6 +18,7 @@ export interface Message {
   who: string;
   role: Role;
   text: string;
+  kind?: string;
   attachments?: MessageAttachment[];
 }
 
@@ -30,6 +31,7 @@ export interface Conversation {
   time: string;
   preview: string;
   assignee: string;
+  assigneeId?: string | null;
   messages: Message[];
 }
 

@@ -21,6 +21,10 @@ interface UseInboxReturn {
   setFilter: (filter: Filter) => void;
   selectConversation: (id: string) => void;
   sendReply: (text: string, attachments?: { storageKey: string; fileName: string; mimeType: string; sizeBytes: number }[]) => void;
+  assignConversation: (conversationId: string, assigneeId: string | null) => void;
+  addNote: (conversationId: string, text: string) => void;
+  resolveConversation: (conversationId: string) => void;
+  escalateConversation: (conversationId: string, managerId: string, reason: string, note: string) => void;
   toggleMobileMenu: () => void;
   closeMobileMenu: () => void;
   goBackToList: () => void;
@@ -109,6 +113,71 @@ export function useInbox(): UseInboxReturn {
     [selectedId],
   );
 
+  const assignConversation = useCallback((conversationId: string, assigneeId: string | null) => {
+    fetch('/api/inbox/assign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conversationId, assigneeId }),
+    })
+      .then(async (res) => {
+        if (res.status === 401) {
+          redirectToSignIn();
+          throw new Error('Sign in required.');
+        }
+        if (!res.ok) throw new Error('Assign request failed.');
+        setInbox(toState((await res.json()) as InboxPayload));
+      })
+      .catch(() => {
+        fetchInbox()
+          .then(setInbox)
+          .catch(() => {});
+      });
+  }, []);
+
+  const postAction = useCallback((url: string, body: Record<string, unknown>) => {
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+      .then(async (res) => {
+        if (res.status === 401) {
+          redirectToSignIn();
+          throw new Error('Sign in required.');
+        }
+        if (!res.ok) throw new Error('Request failed.');
+        setInbox(toState((await res.json()) as InboxPayload));
+      })
+      .catch(() => {
+        fetchInbox()
+          .then(setInbox)
+          .catch(() => {});
+      });
+  }, []);
+
+  const addNote = useCallback(
+    (conversationId: string, text: string) => {
+      if (!text.trim()) return;
+      postAction('/api/inbox/note', { conversationId, text: text.trim() });
+    },
+    [postAction],
+  );
+
+  const resolveConversation = useCallback(
+    (conversationId: string) => {
+      postAction('/api/inbox/resolve', { conversationId });
+    },
+    [postAction],
+  );
+
+  const escalateConversation = useCallback(
+    (conversationId: string, managerId: string, reason: string, note: string) => {
+      if (!managerId || !reason.trim()) return;
+      postAction('/api/inbox/escalate', { conversationId, managerId, reason, note });
+    },
+    [postAction],
+  );
+
   const toggleMobileMenu = useCallback(() => {
     setIsMobileMenuOpen(prev => !prev);
   }, []);
@@ -143,6 +212,10 @@ export function useInbox(): UseInboxReturn {
     setFilter,
     selectConversation,
     sendReply,
+    assignConversation,
+    addNote,
+    resolveConversation,
+    escalateConversation,
     toggleMobileMenu,
     closeMobileMenu,
     goBackToList,

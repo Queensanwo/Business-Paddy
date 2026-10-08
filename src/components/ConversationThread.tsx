@@ -11,9 +11,22 @@ export interface PendingAttachment {
   sizeBytes: number;
 }
 
+export interface AssignableStaff {
+  id: string;
+  name: string;
+  role?: string;
+}
+
 interface ConversationThreadProps {
   conversation: Conversation | undefined;
   onSendReply: (text: string, attachments: PendingAttachment[]) => void;
+  onAddNote: (text: string) => void;
+  onResolve: (conversationId: string) => void;
+  onEscalate: (conversationId: string, managerId: string, reason: string, note: string) => void;
+  currentUserId: string | null;
+  canAssignOthers: boolean;
+  staff: AssignableStaff[];
+  onAssign: (conversationId: string, assigneeId: string | null) => void;
 }
 
 function AttachmentView({ a }: { a: { id: string; fileName: string; mimeType: string } }) {
@@ -41,9 +54,24 @@ function AttachmentView({ a }: { a: { id: string; fileName: string; mimeType: st
   );
 }
 
-export function ConversationThread({ conversation, onSendReply }: ConversationThreadProps) {
+export function ConversationThread({
+  conversation,
+  onSendReply,
+  onAddNote,
+  onResolve,
+  onEscalate,
+  currentUserId,
+  canAssignOthers,
+  staff,
+  onAssign,
+}: ConversationThreadProps) {
   const [pending, setPending] = useState<PendingAttachment[]>([]);
   const [uploadNote, setUploadNote] = useState('');
+  const [mode, setMode] = useState<'reply' | 'note'>('reply');
+  const [escalating, setEscalating] = useState(false);
+  const [escManager, setEscManager] = useState('');
+  const [escReason, setEscReason] = useState('Difficult customer');
+  const [escNote, setEscNote] = useState('');
   const [recording, setRecording] = useState(false);
   const [replyText, setReplyText] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -95,8 +123,13 @@ export function ConversationThread({ conversation, onSendReply }: ConversationTh
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!replyText.trim() && pending.length === 0) return;
-    onSendReply(replyText, pending);
+    if (mode === 'note') {
+      if (!replyText.trim()) return;
+      onAddNote(replyText);
+    } else {
+      if (!replyText.trim() && pending.length === 0) return;
+      onSendReply(replyText, pending);
+    }
     setReplyText('');
     setPending([]);
     setUploadNote('');
@@ -105,10 +138,18 @@ export function ConversationThread({ conversation, onSendReply }: ConversationTh
   const composer = (
     <form className="composer" id="replyForm" onSubmit={handleSubmit}>
       <div>
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
+          <button type="button" className={`chip${mode === 'reply' ? ' active' : ''}`} onClick={() => setMode('reply')}>
+            Reply
+          </button>
+          <button type="button" className={`chip${mode === 'note' ? ' active' : ''}`} onClick={() => setMode('note')}>
+            Internal note
+          </button>
+        </div>
         <textarea
           id="replyBox"
           name="reply"
-          placeholder="Write a reply the customer will see on their channel…"
+          placeholder={mode === 'note' ? 'Write a private note for staff only…' : 'Write a reply the customer will see on their channel…'}
           value={replyText}
           onChange={(e) => setReplyText(e.target.value)}
         />
@@ -130,27 +171,31 @@ export function ConversationThread({ conversation, onSendReply }: ConversationTh
           </div>
         ) : null}
         {uploadNote ? <div className="assignee" style={{ marginTop: '4px' }}>{uploadNote}</div> : null}
-        <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-          <input
-            ref={fileRef}
-            type="file"
-            hidden
-            accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,text/plain,audio/mpeg,audio/wav,audio/webm,audio/mp4"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) uploadFile(f);
-              e.target.value = '';
-            }}
-          />
-          <button type="button" className="chip" onClick={() => fileRef.current?.click()}>
-            Attach file
-          </button>
-          <button type="button" className={`chip${recording ? ' active' : ''}`} onClick={toggleRecording}>
-            {recording ? '● Stop voice note' : '🎙 Voice note'}
-          </button>
-        </div>
+        {mode === 'reply' ? (
+          <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+            <input
+              ref={fileRef}
+              type="file"
+              hidden
+              accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,text/plain,audio/mpeg,audio/wav,audio/webm,audio/mp4"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) uploadFile(f);
+                e.target.value = '';
+              }}
+            />
+            <button type="button" className="chip" onClick={() => fileRef.current?.click()}>
+              Attach file
+            </button>
+            <button type="button" className={`chip${recording ? ' active' : ''}`} onClick={toggleRecording}>
+              {recording ? '● Stop voice note' : '🎙 Voice note'}
+            </button>
+          </div>
+        ) : (
+          <div className="assignee" style={{ marginTop: '6px' }}>Staff only — never sent to the customer.</div>
+        )}
       </div>
-      <button className="send" type="submit">Send Reply</button>
+      <button className="send" type="submit">{mode === 'note' ? 'Save Note' : 'Send Reply'}</button>
     </form>
   );
 
@@ -178,6 +223,82 @@ export function ConversationThread({ conversation, onSendReply }: ConversationTh
           <div className="assignee" id="custMeta">
             {channelLabel[conversation.channel as Channel]} · {conversation.status} · Assigned to {conversation.assignee}
           </div>
+          <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+            {!conversation.assigneeId && currentUserId ? (
+              <button className="chip" type="button" onClick={() => onAssign(conversation.id, currentUserId)}>
+                Claim
+              </button>
+            ) : null}
+            {canAssignOthers && staff.length > 0 ? (
+              <select
+                aria-label="Assign conversation"
+                value={conversation.assigneeId ?? ''}
+                onChange={(e) => onAssign(conversation.id, e.target.value || null)}
+                style={{ border: '1px solid var(--line)', borderRadius: '999px', padding: '5px 10px', fontSize: '0.75rem', background: 'var(--off-white)', color: 'var(--ink)' }}
+              >
+                <option value="">Unassigned</option>
+                {staff.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            ) : null}
+            {conversation.status !== 'Resolved' ? (
+              <button className="chip" type="button" onClick={() => onResolve(conversation.id)}>
+                Resolve
+              </button>
+            ) : null}
+            {conversation.status !== 'Escalated' ? (
+              <button className="chip" type="button" onClick={() => setEscalating((v) => !v)}>
+                Escalate
+              </button>
+            ) : null}
+          </div>
+          {escalating ? (
+            <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <select
+                aria-label="Escalate to manager"
+                value={escManager}
+                onChange={(e) => setEscManager(e.target.value)}
+                style={{ border: '1px solid var(--line)', borderRadius: '999px', padding: '5px 10px', fontSize: '0.75rem', background: 'var(--off-white)', color: 'var(--ink)' }}
+              >
+                <option value="">Select manager…</option>
+                {staff
+                  .filter((s) => !s.role || s.role === 'OWNER' || s.role === 'MANAGER')
+                  .map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+              </select>
+              <select
+                aria-label="Escalation reason"
+                value={escReason}
+                onChange={(e) => setEscReason(e.target.value)}
+                style={{ border: '1px solid var(--line)', borderRadius: '999px', padding: '5px 10px', fontSize: '0.75rem', background: 'var(--off-white)', color: 'var(--ink)' }}
+              >
+                {['Difficult customer', 'Refund request', 'Technical issue', 'Complaint', 'Needs approval', 'Other'].map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+              <input
+                aria-label="Escalation note (optional)"
+                value={escNote}
+                onChange={(e) => setEscNote(e.target.value)}
+                placeholder="Note (optional)"
+                style={{ border: '1px solid var(--line)', borderRadius: '999px', padding: '5px 10px', fontSize: '0.75rem', background: 'var(--off-white)', color: 'var(--ink)' }}
+              />
+              <button
+                className="chip"
+                type="button"
+                disabled={!escManager}
+                onClick={() => {
+                  onEscalate(conversation.id, escManager, escReason, escNote);
+                  setEscalating(false);
+                  setEscNote('');
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          ) : null}
         </div>
         <div id="custBadges">
           <Badge variant={conversation.channel}>{channelLabel[conversation.channel as Channel]}</Badge>
@@ -186,8 +307,12 @@ export function ConversationThread({ conversation, onSendReply }: ConversationTh
       </div>
       <div className="messages" id="messages">
         {conversation.messages.map((m, i) => (
-          <div key={i} className={`bubble ${m.role === 'staff' ? 'staff' : 'customer'}`}>
-            <div className="who">{m.who}</div>
+          <div
+            key={i}
+            className={`bubble ${m.role === 'staff' ? 'staff' : 'customer'}`}
+            style={m.kind === 'NOTE' ? { background: '#fdf3d8', color: 'var(--ink)', border: '1px dashed var(--sand)' } : undefined}
+          >
+            <div className="who">{m.who}{m.kind === 'NOTE' ? ' · internal note, staff only' : ''}</div>
             {m.text}
             {(m.attachments ?? []).map((a) => (
               <AttachmentView key={a.id} a={a} />

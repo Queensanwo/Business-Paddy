@@ -88,10 +88,12 @@ export function toUiConversation(row: ConversationRow): Conversation {
     time: timeAgo(last?.createdAt ?? row.createdAt),
     preview: row.preview ?? last?.text ?? '',
     assignee: row.assignee?.name ?? 'Unassigned',
+    assigneeId: row.assigneeId ?? null,
     messages: row.messages.map((m) => ({
       who: m.kind === 'CUSTOMER' ? customerName : m.senderName,
       role: kindToRole(m.kind),
       text: m.text,
+      kind: m.kind,
       attachments: m.attachments.map((a) => ({
         id: a.id,
         fileName: a.fileName,
@@ -178,6 +180,194 @@ async function notifyGuestReply(conversationId: string): Promise<void> {
   } catch (e) {
     console.error('guest reply notification failed', e);
   }
+}
+
+/**
+ * Assigns a conversation. Claiming (assigning to yourself) is open to every
+ * staff role; assigning to someone else requires Owner or Manager.
+ * Passing a null assigneeId unassigns back to the shared queue.
+ */
+export async function assignConversation(
+  workspaceId: string,
+  conversationId: string,
+  assigneeId: string | null,
+  actor: { userId: string; role: string },
+): Promise<InboxSnapshot> {
+  const conv = await prisma.conversation.findFirst({
+    where: { id: conversationId, workspaceId },
+    select: { id: true },
+  });
+  if (!conv) throw new InboxApiError(404, 'Conversation not found.');
+
+  const claimingSelf = assigneeId === actor.userId;
+  const isManager = actor.role === 'OWNER' || actor.role === 'MANAGER';
+  if (assigneeId !== null && !claimingSelf && !isManager) {
+    throw new InboxApiError(403, 'Only owners and managers can assign to others.');
+  }
+  if (assigneeId !== null) {
+    const target = await prisma.user.findFirst({
+      where: { id: assigneeId, workspaceId },
+      select: { id: true },
+    });
+    if (!target) throw new InboxApiError(404, 'Staff member not found.');
+  }
+
+  await prisma.$transaction([
+    prisma.conversation.update({
+      where: { id: conversationId },
+      data: { assigneeId },
+    }),
+    prisma.auditLog.create({
+      data: {
+        workspaceId,
+        actorId: actor.userId,
+        action: assigneeId === null ? 'conversation.unassigned' : 'conversation.assigned',
+        entityType: 'Conversation',
+        entityId: conversationId,
+      },
+    }),
+  ]);
+
+  return snapshotOf(await loadRows(workspaceId));
+}
+
+/**
+ * Adds an internal staff note. Notes are staff-only: they are never sent to
+ * any channel and guest thread views exclude them.
+ */
+export async function addNote(
+  workspaceId: string,
+  conversationId: string,
+  text: string,
+  sender: string,
+): Promise<InboxSnapshot> {
+  const trimmed = text.trim();
+  if (!trimmed) throw new InboxApiError(400, 'Note text is required.');
+  if (trimmed.length > 2000) throw new InboxApiError(400, 'Note is limited to 2000 characters.');
+  const conv = await prisma.conversation.findFirst({
+    where: { id: conversationId, workspaceId },
+    select: { id: true },
+  });
+  if (!conv) throw new InboxApiError(404, 'Conversation not found.');
+
+  await prisma.$transaction([
+    prisma.message.create({
+      data: {
+        conversationId,
+        kind: 'NOTE',
+        senderName: sender,
+        text: trimmed,
+      },
+    }),
+    prisma.auditLog.create({
+      data: {
+        workspaceId,
+        action: 'conversation.note_added',
+        entityType: 'Conversation',
+        entityId: conversationId,
+      },
+    }),
+  ]);
+
+  return snapshotOf(await loadRows(workspaceId));
+}
+
+/**
+ * Marks a conversation resolved. Any authenticated staff member may resolve;
+ * reopening happens automatically on the next customer message.
+ */
+export async function resolveConversation(
+  workspaceId: string,
+  conversationId: string,
+): Promise<InboxSnapshot> {
+  const conv = await prisma.conversation.findFirst({
+    where: { id: conversationId, workspaceId },
+    select: { id: true },
+  });
+  if (!conv) throw new InboxApiError(404, 'Conversation not found.');
+
+  await prisma.$transaction([
+    prisma.conversation.update({
+      where: { id: conversationId },
+      data: { status: 'RESOLVED' },
+    }),
+    prisma.auditLog.create({
+      data: {
+        workspaceId,
+        action: 'conversation.resolved',
+        entityType: 'Conversation',
+        entityId: conversationId,
+      },
+    }),
+  ]);
+
+  return snapshotOf(await loadRows(workspaceId));
+}
+
+const ESCALATION_REASONS = [
+  'Difficult customer',
+  'Refund request',
+  'Technical issue',
+  'Complaint',
+  'Needs approval',
+  'Other',
+];
+
+/**
+ * Escalates a conversation to a manager or the owner with a reason.
+ * Any staff role may escalate (it is how juniors get help); the target must
+ * be an Owner or Manager in the same workspace. The customer stays in the
+ * same conversation with full context preserved.
+ */
+export async function escalateConversation(
+  workspaceId: string,
+  conversationId: string,
+  managerId: string,
+  reason: string,
+  note: string,
+  actorId: string,
+): Promise<InboxSnapshot> {
+  const trimmedReason = reason.trim();
+  if (!ESCALATION_REASONS.includes(trimmedReason)) {
+    throw new InboxApiError(400, 'A valid escalation reason is required.');
+  }
+  const conv = await prisma.conversation.findFirst({
+    where: { id: conversationId, workspaceId },
+    select: { id: true },
+  });
+  if (!conv) throw new InboxApiError(404, 'Conversation not found.');
+  const manager = await prisma.user.findFirst({
+    where: { id: managerId, workspaceId, role: { in: ['OWNER', 'MANAGER'] } },
+    select: { id: true, name: true },
+  });
+  if (!manager) throw new InboxApiError(404, 'Manager not found.');
+
+  const trimmedNote = note.trim().slice(0, 2000);
+  await prisma.$transaction([
+    prisma.conversation.update({
+      where: { id: conversationId },
+      data: { status: 'ESCALATED', assigneeId: managerId },
+    }),
+    prisma.message.create({
+      data: {
+        conversationId,
+        kind: 'NOTE',
+        senderName: 'System',
+        text: `Escalated to ${manager.name}: ${trimmedReason}${trimmedNote ? ` — ${trimmedNote}` : ''}`,
+      },
+    }),
+    prisma.auditLog.create({
+      data: {
+        workspaceId,
+        actorId,
+        action: 'conversation.escalated',
+        entityType: 'Conversation',
+        entityId: conversationId,
+      },
+    }),
+  ]);
+
+  return snapshotOf(await loadRows(workspaceId));
 }
 
 export async function saveReply(
