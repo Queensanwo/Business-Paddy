@@ -1,0 +1,289 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WorkspaceMode {
+  DEMO
+  LIVE
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  AGENT
+  TRAINEE
+}
+
+enum Channel {
+  WHATSAPP
+  INSTAGRAM
+  TIKTOK
+  EMAIL
+  WEBSITE
+  PADDY_CHAT
+}
+
+enum ConvStatus {
+  NEW
+  IN_PROGRESS
+  WAITING_FOR_CUSTOMER
+  FOLLOW_UP
+  NEEDS_APPROVAL
+  ESCALATED
+  RESOLVED
+}
+
+enum MessageKind {
+  CUSTOMER
+  STAFF
+  NOTE
+  SYSTEM
+}
+
+enum ReminderStatus {
+  SCHEDULED
+  SNOOZED
+  COMPLETED
+  CANCELLED
+}
+
+model Workspace {
+  id           String         @id @default(cuid())
+  name         String
+  industry     String?
+  contactEmail String?
+  contactPhone String?
+  mode         WorkspaceMode  @default(DEMO)
+  createdAt    DateTime       @default(now())
+  users        User[]
+  customers    Customer[]
+  conversations Conversation[]
+  reminders    Reminder[]
+  auditLogs    AuditLog[]
+  channels     ChannelAccount[]
+  payments     Payment[]
+  invitations  StaffInvitation[]
+}
+
+model User {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          Role      @default(AGENT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt @default(now())
+
+  assignedConversations Conversation[] @relation("Assignee")
+  assignedReminders     Reminder[]     @relation("ReminderAssignee")
+  auditActions          AuditLog[]     @relation("Actor")
+  sessions              Session[]
+  accounts              Account[]
+
+  @@index([workspaceId, email])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Customer {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name          String
+  contactDetail String?
+  // Consent for follow-up contact (1F). Set only when the guest explicitly
+  // opts in after a resolved chat or completed deal. Never assumed.
+  contactConsentAt DateTime?
+  createdAt     DateTime @default(now())
+
+  conversations Conversation[]
+
+  @@index([workspaceId])
+}
+
+model ChannelAccount {
+  id                String   @id @default(cuid())
+  workspaceId       String
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  channel           Channel
+  providerAccountId String?
+  displayName       String?
+  // FR43: records whether outbound messages appear in the platform's own inbox (verified per channel, never assumed)
+  mirroringVerified Boolean  @default(false)
+  mirroringNotes    String?
+  createdAt         DateTime @default(now())
+
+  conversations Conversation[]
+
+  @@index([workspaceId, channel])
+}
+
+model Conversation {
+  id          String     @id @default(cuid())
+  workspaceId String
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  customerId  String?
+  customer    Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  channel     Channel
+  channelAccountId String?
+  channelAccount ChannelAccount? @relation(fields: [channelAccountId], references: [id], onDelete: SetNull)
+  status      ConvStatus @default(NEW)
+  sortOrder   Int        @default(0)
+  // Paddy Chat guest access: unguessable return-link token. Null for all
+  // other channels. The token alone grants guest access to this thread.
+  guestToken  String?    @unique
+  assigneeId  String?
+  assignee    User?      @relation("Assignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  preview     String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  messages  Message[]
+  reminders Reminder[]
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, channel])
+}
+
+model Message {
+  id          String      @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  kind        MessageKind
+  senderName  String
+  text        String
+  // FR42: provider message ID stored when the reply is sent through an official channel integration
+  providerMessageId String? @unique
+  createdAt   DateTime  @default(now())
+
+  attachments Attachment[]
+
+  @@index([conversationId, createdAt])
+}
+
+model Attachment {
+  id        String  @id @default(cuid())
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  fileName  String
+  mimeType  String
+  sizeBytes Int?
+  storageKey String?
+  createdAt DateTime @default(now())
+}
+
+// Internal staff reminders only. Never sent to customers.
+model Reminder {
+  id             String         @id @default(cuid())
+  workspaceId    String
+  workspace      Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  conversationId String?
+  conversation   Conversation?  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  title          String
+  assignedToId   String?
+  assignedTo     User?          @relation("ReminderAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  scheduledAt    DateTime
+  timezone       String?
+  frequency      String?
+  status         ReminderStatus @default(SCHEDULED)
+  createdAt      DateTime       @default(now())
+
+  @@index([workspaceId, status])
+}
+
+// Test-mode payments only. A test payment never activates a real subscription
+// (activatedSubscription stays false; enforced in code, not just convention).
+model Payment {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  reference   String   @unique
+  email       String?
+  amountKobo  Int
+  currency    String   @default("NGN")
+  status      String   @default("PENDING")
+  channel     String?
+  paidAt      DateTime?
+  isTest      Boolean  @default(true)
+  activatedSubscription Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([workspaceId, status])
+}
+
+// Staff invitations: secure single-use expiring links. The raw token is only
+// ever sent by email; only its SHA-256 hash is stored. No passwords by email.
+model StaffInvitation {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  email       String
+  name        String
+  role        Role      @default(AGENT)
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, email])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  workspaceId String
+  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  actorId    String?
+  actor      User?    @relation("Actor", fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String?
+  entityId   String?
+  createdAt  DateTime @default(now())
+
+  @@index([workspaceId, createdAt])
+}

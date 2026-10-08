@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Business Paddy — Shared Inbox</title>
+  <style>
+    :root {
+      --navy: #123a8a;
+      --navy-deep: #0b1f4d;
+      --navy-mid: #1d4fb8;
+      --beige: #f3ead8;
+      --paper: #faf4e8;
+      --ink: #14110c;
+      --muted: #5a5348;
+      --line: #e0d4be;
+      --sand: #e8c56b;
+      --coral: #b23a22;
+      --whatsapp: #0f7a42;
+      --instagram: #a12d68;
+      --email: #0d4a8c;
+      --radius: 14px;
+      --shadow: 0 10px 30px rgba(11, 31, 77, 0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--beige);
+      color: var(--ink);
+      font-family: "Segoe UI", "Trebuchet MS", Tahoma, sans-serif;
+      line-height: 1.45;
+    }
+
+    button, input, textarea, select { font: inherit; }
+
+    .app {
+      display: grid;
+      grid-template-columns: 232px 340px minmax(0, 1fr);
+      grid-template-rows: 100vh;
+      min-height: 100vh;
+    }
+
+    .nav {
+      background: linear-gradient(180deg, var(--navy-deep), var(--navy));
+      color: #f7f1e4;
+      padding: 22px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 8px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--sand);
+      color: var(--navy-deep);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .brand h1 { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; }
+    .brand p { font-size: 0.72rem; color: #d6c9a8; }
+
+    .nav-links { display: flex; flex-direction: column; gap: 6px; }
+
+    .nav-links a {
+      color: #f7f1e4;
+      text-decoration: none;
+      padding: 10px 12px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-links a.active,
+    .nav-links a:hover { background: rgba(255, 255, 255, 0.14); }
+
+    .count {
+      background: var(--sand);
+      color: var(--navy-deep);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+
+    .nav-foot {
+      margin-top: auto;
+      background: rgba(0, 0, 0, 0.22);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 0.85rem;
+    }
+
+    .nav-foot strong { display: block; }
+    .nav-foot span { color: #d6c9a8; font-size: 0.75rem; }
+
+    .menu-btn {
+      display: none;
+      border: 0;
+      background: var(--navy);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+    }
+
+    .inbox {
+      background: var(--paper);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .inbox-head { padding: 18px 16px 12px; border-bottom: 1px solid var(--line); }
+    .inbox-head h2 { font-size: 1.15rem; }
+    .inbox-head p { color: var(--muted); font-size: 0.82rem; }
+
+    .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+
+    .chip {
+      border: 1px solid var(--line);
+      background: var(--beige);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .chip.active {
+      background: var(--navy);
+      color: #fff;
+      border-color: var(--navy);
+    }
+
+    .conv-list { overflow: auto; flex: 1; }
+
+    .conv {
+      width: 100%;
+      text-align: left;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      background: transparent;
+      padding: 14px 16px;
+      cursor: pointer;
+    }
+
+    .conv:hover { background: var(--beige); }
+    .conv.selected { background: #e4dcc6; outline: 2px solid var(--navy); outline-offset: -2px; }
+
+    .conv-top, .conv-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .conv-top strong { font-size: 0.95rem; }
+    .time { color: var(--muted); font-size: 0.72rem; white-space: nowrap; }
+    .preview {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin: 4px 0 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      padding: 3px 8px;
+      border-radius: 999px;
+      color: #fff;
+    }
+
+    .badge.whatsapp { background: var(--whatsapp); }
+    .badge.instagram { background: var(--instagram); }
+    .badge.email { background: var(--email); }
+
+    .status {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #efe6d4;
+      color: var(--ink);
+    }
+
+    .status.new { background: #f7e3b0; color: #5a3d00; }
+    .status.in-progress { background: #d5e0f6; color: #0b1f4d; }
+    .status.waiting { background: #dce7f8; color: #123a66; }
+    .status.follow-up { background: #efe0bd; color: #5a3f10; }
+    .status.escalated { background: #f6d0c7; color: #7a2412; }
+    .status.resolved { background: #e6ddc8; color: #2d281f; }
+
+    .main {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background: var(--beige);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      padding: 14px 20px 0;
+    }
+
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .card .value {
+      font-size: 1.7rem;
+      font-weight: 800;
+      margin-top: 4px;
+      color: var(--navy-deep);
+    }
+
+    .card.unanswered .value { color: var(--coral); }
+
+    .thread-wrap {
+      flex: 1;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 0;
+      margin: 14px 20px 18px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .thread-head {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .thread-head h3 { font-size: 1.1rem; }
+    .assignee { color: var(--muted); font-size: 0.82rem; margin-top: 4px; }
+
+    .messages {
+      overflow: auto;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: linear-gradient(#faf4e8, #eee4cf);
+    }
+
+    .bubble {
+      max-width: min(72%, 520px);
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-size: 0.92rem;
+    }
+
+    .bubble.customer {
+      background: #fffdf8;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      align-self: flex-start;
+    }
+
+    .bubble.staff {
+      background: var(--navy);
+      color: #fff;
+      align-self: flex-end;
+    }
+
+    .bubble .who {
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      opacity: 0.9;
+    }
+
+    .composer {
+      border-top: 1px solid var(--line);
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      background: var(--paper);
+    }
+
+    .composer textarea {
+      width: 100%;
+      min-height: 72px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: var(--beige);
+      color: var(--ink);
+    }
+
+    .send {
+      align-self: end;
+      border: 0;
+      background: var(--navy);
+      color: #fff;
+      font-weight: 800;
+      padding: 12px 18px;
+      border-radius: 12px;
+      cursor: pointer;
+      min-width: 128px;
+    }
+
+    .send:hover { background: var(--navy-deep); }
+
+    .overlay { display: none; }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+      }
+
+      .nav {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: min(82vw, 280px);
+        transform: translateX(-105%);
+        transition: transform 0.2s ease;
+        z-index: 20;
+      }
+
+      .nav.open { transform: none; }
+
+      .overlay.show {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(11, 31, 77, 0.45);
+        z-index: 15;
+      }
+
+      .menu-btn { display: inline-flex; }
+
+      .inbox { display: none; }
+      .app.list-mode .inbox { display: flex; min-height: calc(100vh - 58px); }
+      .app.list-mode .main { display: none; }
+
+      .metrics { grid-template-columns: 1fr; }
+      .thread-wrap { margin: 12px; }
+      .bubble { max-width: 88%; }
+    }
+
+    @media (min-width: 981px) {
+      .app.list-mode .inbox,
+      .app.list-mode .main { display: flex; }
+      #backBtn { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay" id="overlay"></div>
+  <div class="app list-mode" id="app">
+    <aside class="nav" id="nav">
+      <div class="brand">
+        <div class="logo">BP</div>
+        <div>
+          <h1>Business Paddy</h1>
+          <p>Shared inbox</p>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a class="active" href="#inbox">Inbox <span class="count">8</span></a>
+        <a href="#customers">Customers</a>
+        <a href="#team">Team</a>
+        <a href="#settings">Settings</a>
+      </nav>
+      <div class="nav-foot">
+        <strong>Ayo Sanwo</strong>
+        <span>Owner · Lagos Market Hub</span>
+      </div>
+    </aside>
+
+    <section class="inbox" id="inbox">
+      <div class="inbox-head">
+        <h2>All conversations</h2>
+        <p>WhatsApp, Instagram and email in one place</p>
+        <div class="filters" id="filters">
+          <button class="chip active" data-filter="all">All</button>
+          <button class="chip" data-filter="whatsapp">WhatsApp</button>
+          <button class="chip" data-filter="instagram">Instagram</button>
+          <button class="chip" data-filter="email">Email</button>
+        </div>
+      </div>
+      <div class="conv-list" id="convList"></div>
+    </section>
+
+    <section class="main">
+      <header class="topbar">
+        <button class="menu-btn" id="menuBtn" type="button">Menu</button>
+        <div>
+          <strong>Owner performance</strong>
+          <div style="color:var(--muted);font-size:0.8rem;">Today · Lagos Market Hub</div>
+        </div>
+        <button class="chip" id="backBtn" type="button">Inbox list</button>
+      </header>
+
+      <div class="metrics">
+        <article class="card received">
+          <div class="label">Conversations received</div>
+          <div class="value" id="metricReceived">8</div>
+        </article>
+        <article class="card answered">
+          <div class="label">Conversations answered</div>
+          <div class="value" id="metricAnswered">5</div>
+        </article>
+        <article class="card unanswered">
+          <div class="label">Conversations unanswered</div>
+          <div class="value" id="metricUnanswered">3</div>
+        </article>
+      </div>
+
+      <div class="thread-wrap">
+        <div class="thread-head">
+          <div>
+            <h3 id="custName">Select a conversation</h3>
+            <div class="assignee" id="custMeta"></div>
+          </div>
+          <div id="custBadges"></div>
+        </div>
+        <div class="messages" id="messages"></div>
+        <form class="composer" id="replyForm">
+          <textarea id="replyBox" placeholder="Write a reply the customer will see on their channel…" required></textarea>
+          <button class="send" type="submit">Send Reply</button>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const conversations = [
+      {
+        id: "c1",
+        name: "Ngozi Adeyemi",
+        channel: "whatsapp",
+        status: "New",
+        statusClass: "new",
+        time: "2 min",
+        preview: "Please, do you still have the Ankara set in size 14?",
+        assignee: "Unassigned",
+        messages: [
+          { who: "Ngozi Adeyemi", role: "customer", text: "Good evening. Please, do you still have the Ankara set in size 14?" }
+        ]
+      },
+      {
+        id: "c2",
+        name: "Ibrahim Musa",
+        channel: "instagram",
+        status: "In progress",
+        statusClass: "in-progress",
+        time: "18 min",
+        preview: "The brown sandals in your story — how much for two pairs?",
+        assignee: "Funke Bello",
+        messages: [
+          { who: "Ibrahim Musa", role: "customer", text: "The brown sandals in your story — how much for two pairs?" },
+          { who: "Funke Bello", role: "staff", text: "Hi Ibrahim, two pairs are ₦28,000 including delivery in Abuja. Shall I hold them?" }
+        ]
+      },
+      {
+        id: "c3",
+        name: "Chioma Okeke",
+        channel: "email",
+        status: "Waiting for customer",
+        statusClass: "waiting",
+        time: "1 hr",
+        preview: "Invoice 1042 — can you confirm the delivery address?",
+        assignee: "Ayo Sanwo",
+        messages: [
+          { who: "Chioma Okeke", role: "customer", text: "Hello, I paid for order 1042 this morning. Can you confirm it will go to Enugu, Independence Layout?" },
+          { who: "Ayo Sanwo", role: "staff", text: "Chioma, thank you. Please reply with the street number and a landmark so we can book the rider." }
+        ]
+      },
+      {
+        id: "c4",
+        name: "Tunde Bakare",
+        channel: "whatsapp",
+        status: "Follow up",
+        statusClass: "follow-up",
+        time: "Yesterday",
+        preview: "Has the wholesale crate of tomatoes arrived?",
+        assignee: "Funke Bello",
+        messages: [
+          { who: "Tunde Bakare", role: "customer", text: "Paddy, has the wholesale crate of tomatoes arrived from Mile 12?" },
+          { who: "Funke Bello", role: "staff", text: "Tunde, the truck is due this afternoon. I will message you as soon as we offload." }
+        ]
+      },
+      {
+        id: "c5",
+        name: "Amaka Eze",
+        channel: "instagram",
+        status: "Escalated",
+        statusClass: "escalated",
+        time: "3 hr",
+        preview: "Wrong colour sent. I need a replacement today.",
+        assignee: "Ayo Sanwo",
+        messages: [
+          { who: "Amaka Eze", role: "customer", text: "You sent royal blue instead of mustard. I need a replacement today before the event." },
+          { who: "Funke Bello", role: "staff", text: "Amaka, I am sorry. I have escalated this so the owner can approve a same-day swap." }
+        ]
+      },
+      {
+        id: "c6",
+        name: "David Mensah",
+        channel: "email",
+        status: "New",
+        statusClass: "new",
+        time: "4 hr",
+        preview: "Website form: bulk shea butter for Accra shop",
+        assignee: "Unassigned",
+        messages: [
+          { who: "David Mensah", role: "customer", text: "I run a shop in Accra and need 40kg of unrefined shea butter. What is your wholesale rate and shipping time?" }
+        ]
+      },
+      {
+        id: "c7",
+        name: "Halima Bello",
+        channel: "whatsapp",
+        status: "Resolved",
+        statusClass: "resolved",
+        time: "Tue",
+        preview: "Thank you, the wrapper arrived in good condition.",
+        assignee: "Ayo Sanwo",
+        messages: [
+          { who: "Halima Bello", role: "customer", text: "Has my wrapper left the shop?" },
+          { who: "Ayo Sanwo", role: "staff", text: "Yes Halima, GIG is collecting it at 3pm. Tracking will follow." },
+          { who: "Halima Bello", role: "customer", text: "Thank you, the wrapper arrived in good condition." }
+        ]
+      },
+      {
+        id: "c8",
+        name: "Ruth Boateng",
+        channel: "email",
+        status: "In progress",
+        statusClass: "in-progress",
+        time: "5 hr",
+        preview: "Can I change Saturday pickup to Monday?",
+        assignee: "Funke Bello",
+        messages: [
+          { who: "Ruth Boateng", role: "customer", text: "Please change my Saturday pickup to Monday morning. I will be travelling." }
+        ]
+      }
+    ];
+
+    const unansweredIds = new Set(["c1", "c6", "c8"]);
+    let filter = "all";
+    let selectedId = "c2";
+    const channelLabel = { whatsapp: "WhatsApp", instagram: "Instagram", email: "Email" };
+
+    function renderList() {
+      const list = document.getElementById("convList");
+      list.innerHTML = "";
+      conversations
+        .filter((c) => filter === "all" || c.channel === filter)
+        .forEach((c) => {
+          const btn = document.createElement("button");
+          btn.className = "conv" + (c.id === selectedId ? " selected" : "");
+          btn.type = "button";
+          btn.innerHTML =
+            '<div class="conv-top"><strong>' + c.name + '</strong><span class="time">' + c.time + "</span></div>" +
+            '<div class="preview">' + c.preview + "</div>" +
+            '<div class="conv-meta"><span class="badge ' + c.channel + '">' + channelLabel[c.channel] +
+            '</span><span class="status ' + c.statusClass + '">' + c.status + "</span></div>";
+          btn.addEventListener("click", function () {
+            selectedId = c.id;
+            document.getElementById("app").classList.remove("list-mode");
+            renderList();
+            renderThread();
+          });
+          list.appendChild(btn);
+        });
+    }
+
+    function renderThread() {
+      const c = conversations.find((x) => x.id === selectedId);
+      if (!c) return;
+      document.getElementById("custName").textContent = c.name;
+      document.getElementById("custMeta").textContent =
+        channelLabel[c.channel] + " · " + c.status + " · Assigned to " + c.assignee;
+      document.getElementById("custBadges").innerHTML =
+        '<span class="badge ' + c.channel + '">' + channelLabel[c.channel] +
+        '</span> <span class="status ' + c.statusClass + '">' + c.status + "</span>";
+      const box = document.getElementById("messages");
+      box.innerHTML = "";
+      c.messages.forEach((m) => {
+        const div = document.createElement("div");
+        div.className = "bubble " + (m.role === "staff" ? "staff" : "customer");
+        div.innerHTML = '<div class="who">' + m.who + "</div>" + m.text;
+        box.appendChild(div);
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function updateMetrics() {
+      document.getElementById("metricReceived").textContent = String(conversations.length);
+      document.getElementById("metricUnanswered").textContent = String(unansweredIds.size);
+      document.getElementById("metricAnswered").textContent = String(conversations.length - unansweredIds.size);
+    }
+
+    document.getElementById("filters").addEventListener("click", function (e) {
+      const chip = e.target.closest(".chip");
+      if (!chip) return;
+      filter = chip.getAttribute("data-filter");
+      document.querySelectorAll("#filters .chip").forEach((el) => el.classList.toggle("active", el === chip));
+      renderList();
+    });
+
+    document.getElementById("replyForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const c = conversations.find((x) => x.id === selectedId);
+      const text = document.getElementById("replyBox").value.trim();
+      if (!c || !text) return;
+      c.messages.push({ who: "Ayo Sanwo", role: "staff", text: text });
+      c.preview = text;
+      c.status = "In progress";
+      c.statusClass = "in-progress";
+      unansweredIds.delete(c.id);
+      document.getElementById("replyBox").value = "";
+      renderList();
+      renderThread();
+      updateMetrics();
+    });
+
+    document.getElementById("menuBtn").addEventListener("click", function () {
+      document.getElementById("nav").classList.add("open");
+      document.getElementById("overlay").classList.add("show");
+    });
+    document.getElementById("overlay").addEventListener("click", function () {
+      document.getElementById("nav").classList.remove("open");
+      document.getElementById("overlay").classList.remove("show");
+    });
+    document.getElementById("backBtn").addEventListener("click", function () {
+      document.getElementById("app").classList.add("list-mode");
+    });
+
+    renderList();
+    renderThread();
+    updateMetrics();
+  </script>
+</body>
+</html>
