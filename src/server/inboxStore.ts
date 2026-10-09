@@ -36,7 +36,7 @@ const statusToUi: Record<ConvStatus, { status: Status; statusClass: StatusClass 
   IN_PROGRESS: { status: 'In progress', statusClass: 'in-progress' },
   WAITING_FOR_CUSTOMER: { status: 'Waiting for customer', statusClass: 'waiting' },
   FOLLOW_UP: { status: 'Follow up', statusClass: 'follow-up' },
-  NEEDS_APPROVAL: { status: 'New', statusClass: 'new' },
+  NEEDS_APPROVAL: { status: 'Needs approval', statusClass: 'needs-approval' },
   ESCALATED: { status: 'Escalated', statusClass: 'escalated' },
   RESOLVED: { status: 'Resolved', statusClass: 'resolved' },
 };
@@ -362,6 +362,54 @@ export async function escalateConversation(
         workspaceId,
         actorId,
         action: 'conversation.escalated',
+        entityType: 'Conversation',
+        entityId: conversationId,
+      },
+    }),
+  ]);
+
+  return snapshotOf(await loadRows(workspaceId));
+}
+
+const SETTABLE_STATUSES = [
+  'NEW',
+  'IN_PROGRESS',
+  'WAITING_FOR_CUSTOMER',
+  'FOLLOW_UP',
+  'NEEDS_APPROVAL',
+  'ESCALATED',
+  'RESOLVED',
+] as const;
+
+/**
+ * Sets any conversation status directly. Escalation with routing should use
+ * escalateConversation instead; this covers the remaining lifecycle states.
+ */
+export async function setConversationStatus(
+  workspaceId: string,
+  conversationId: string,
+  status: string,
+  actorId: string,
+): Promise<InboxSnapshot> {
+  if (!(SETTABLE_STATUSES as readonly string[]).includes(status)) {
+    throw new InboxApiError(400, 'Invalid status.');
+  }
+  const conv = await prisma.conversation.findFirst({
+    where: { id: conversationId, workspaceId },
+    select: { id: true },
+  });
+  if (!conv) throw new InboxApiError(404, 'Conversation not found.');
+
+  await prisma.$transaction([
+    prisma.conversation.update({
+      where: { id: conversationId },
+      data: { status: status as ConvStatus },
+    }),
+    prisma.auditLog.create({
+      data: {
+        workspaceId,
+        actorId,
+        action: 'conversation.status_changed',
         entityType: 'Conversation',
         entityId: conversationId,
       },

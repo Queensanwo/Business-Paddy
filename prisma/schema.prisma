@@ -69,6 +69,7 @@ model Workspace {
   channels     ChannelAccount[]
   payments     Payment[]
   invitations  StaffInvitation[]
+  savedReplies SavedReply[]
 }
 
 model User {
@@ -273,6 +274,20 @@ model StaffInvitation {
   createdAt   DateTime  @default(now())
 
   @@index([workspaceId, email])
+}
+
+// Owner-approved reusable replies staff can insert and edit (FR17).
+model SavedReply {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  title       String
+  body        String
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([workspaceId])
 }
 
 model AuditLog {

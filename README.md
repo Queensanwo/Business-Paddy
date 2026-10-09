@@ -176,7 +176,7 @@ success message plus the recorded payment row.
 | Abuse guard | ✅ Rate limiting on public guest + invite endpoints (per IP, 429 beyond limit) |
 | 2 | 🟡 Conversation assignment (built + tested, uncommitted): Claim button for unassigned threads (all roles), owner/manager assign dropdown + unassign, audit-logged, workspace-scoped; API `POST /api/inbox/assign` |
 | 2 | 🟡 Internal notes + resolve (built + tested, uncommitted): Reply/Note composer toggle, notes styled distinctly and hidden from guest views, Resolve button, audit-logged; APIs `POST /api/inbox/note`, `POST /api/inbox/resolve` |
-| 2 | 🟡 Escalation (built + tested, uncommitted): Escalate button with manager dropdown, fixed reasons and optional note; any role may escalate, target must be owner/manager; status becomes Escalated with reason note and audit; customer stays in the same thread; API `POST /api/inbox/escalate` |
+| 2 | ✅ Phase 2 complete (claim/assign, notes, resolve, escalation, all 7 statuses, reopening, staff removal — all tested) ||
 | 3 | Reply Tools, Automation & AI |
 | 4 | Customer Intelligence, Cross-Channel & Branding |
 | 5 | Reporting, Performance & Payments (Paystack) |

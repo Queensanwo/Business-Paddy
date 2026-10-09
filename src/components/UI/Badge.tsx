@@ -3,7 +3,7 @@
 interface BadgeProps {
   children: React.ReactNode;
   variant?: 'whatsapp' | 'instagram' | 'email' | 'tiktok' | 'paddy_chat' | 'facebook' | 'status';
-  statusType?: 'new' | 'in-progress' | 'waiting' | 'follow-up' | 'escalated' | 'resolved';
+  statusType?: 'new' | 'in-progress' | 'waiting' | 'follow-up' | 'needs-approval' | 'escalated' | 'resolved';
   className?: string;
 }
 

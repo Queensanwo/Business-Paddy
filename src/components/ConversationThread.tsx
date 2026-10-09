@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Conversation, channelLabel, Channel } from '@/types/conversation';
 import { Badge } from '@/components/UI/Badge';
 
@@ -17,12 +17,23 @@ export interface AssignableStaff {
   role?: string;
 }
 
+const STATUS_OPTIONS = [
+  'New',
+  'In progress',
+  'Waiting for customer',
+  'Follow up',
+  'Needs approval',
+  'Escalated',
+  'Resolved',
+] as const;
+
 interface ConversationThreadProps {
   conversation: Conversation | undefined;
   onSendReply: (text: string, attachments: PendingAttachment[]) => void;
   onAddNote: (text: string) => void;
   onResolve: (conversationId: string) => void;
   onEscalate: (conversationId: string, managerId: string, reason: string, note: string) => void;
+  onStatusChange: (conversationId: string, status: string) => void;
   currentUserId: string | null;
   canAssignOthers: boolean;
   staff: AssignableStaff[];
@@ -60,6 +71,7 @@ export function ConversationThread({
   onAddNote,
   onResolve,
   onEscalate,
+  onStatusChange,
   currentUserId,
   canAssignOthers,
   staff,
@@ -68,6 +80,17 @@ export function ConversationThread({
   const [pending, setPending] = useState<PendingAttachment[]>([]);
   const [uploadNote, setUploadNote] = useState('');
   const [mode, setMode] = useState<'reply' | 'note'>('reply');
+  const [savedReplies, setSavedReplies] = useState<{ id: string; title: string; body: string }[]>([]);
+
+  useEffect(() => {
+    fetch('/api/saved-replies')
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then((data) => setSavedReplies((data as { replies: { id: string; title: string; body: string }[] }).replies ?? []))
+      .catch(() => setSavedReplies([]));
+  }, []);
   const [escalating, setEscalating] = useState(false);
   const [escManager, setEscManager] = useState('');
   const [escReason, setEscReason] = useState('Difficult customer');
@@ -172,7 +195,24 @@ export function ConversationThread({
         ) : null}
         {uploadNote ? <div className="assignee" style={{ marginTop: '4px' }}>{uploadNote}</div> : null}
         {mode === 'reply' ? (
-          <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+          <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+            {savedReplies.length > 0 ? (
+              <select
+                aria-label="Insert saved reply"
+                defaultValue=""
+                onChange={(e) => {
+                  const found = savedReplies.find((r) => r.id === e.target.value);
+                  if (found) setReplyText((prev) => (prev ? `${prev}\n${found.body}` : found.body));
+                  e.target.value = '';
+                }}
+                style={{ border: '1px solid var(--line)', borderRadius: '999px', padding: '5px 10px', fontSize: '0.75rem', background: 'var(--off-white)', color: 'var(--ink)' }}
+              >
+                <option value="">Saved replies…</option>
+                {savedReplies.map((r) => (
+                  <option key={r.id} value={r.id}>{r.title}</option>
+                ))}
+              </select>
+            ) : null}
             <input
               ref={fileRef}
               type="file"
@@ -247,6 +287,16 @@ export function ConversationThread({
                 Resolve
               </button>
             ) : null}
+            <select
+              aria-label="Change status"
+              value={conversation.status}
+              onChange={(e) => onStatusChange(conversation.id, e.target.value)}
+              style={{ border: '1px solid var(--line)', borderRadius: '999px', padding: '5px 10px', fontSize: '0.75rem', background: 'var(--off-white)', color: 'var(--ink)' }}
+            >
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
             {conversation.status !== 'Escalated' ? (
               <button className="chip" type="button" onClick={() => setEscalating((v) => !v)}>
                 Escalate

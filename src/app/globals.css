@@ -514,6 +514,7 @@ button, input, textarea, select {
 .status.in-progress { background: #e3f2fd; color: #1565c0; }
 .status.waiting { background: #e8eaf6; color: #3f51b5; }
 .status.follow-up { background: #fff8e1; color: #f57f17; }
+.status.needs-approval { background: #f3e5f5; color: #6a1b9a; }
 .status.escalated { background: #fdecea; color: #c62828; }
 .status.resolved { background: #e8f5e9; color: #2e7d32; }
 

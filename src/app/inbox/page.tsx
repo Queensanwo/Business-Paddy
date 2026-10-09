@@ -29,6 +29,7 @@ export default function InboxPage() {
     addNote,
     resolveConversation,
     escalateConversation,
+    changeStatus,
     toggleMobileMenu,
     closeMobileMenu,
     goBackToList,
@@ -124,6 +125,7 @@ export default function InboxPage() {
           onAddNote={(text) => addNote(selectedId, text)}
           onResolve={resolveConversation}
           onEscalate={escalateConversation}
+          onStatusChange={changeStatus}
           currentUserId={user?.id ?? null}
           canAssignOthers={canAssignOthers}
           staff={staff}

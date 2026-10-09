@@ -1,10 +1,10 @@
 export type Channel = 'whatsapp' | 'instagram' | 'email' | 'tiktok' | 'paddy_chat' | 'facebook';
 
-export type Status = 'New' | 'In progress' | 'Waiting for customer' | 'Follow up' | 'Escalated' | 'Resolved';
+export type Status = 'New' | 'In progress' | 'Waiting for customer' | 'Follow up' | 'Needs approval' | 'Escalated' | 'Resolved';
 
 export type Role = 'customer' | 'staff';
 
-export type StatusClass = 'new' | 'in-progress' | 'waiting' | 'follow-up' | 'escalated' | 'resolved';
+export type StatusClass = 'new' | 'in-progress' | 'waiting' | 'follow-up' | 'needs-approval' | 'escalated' | 'resolved';
 
 export type InboxFilter = 'all' | 'unanswered' | Channel;
 
@@ -49,6 +49,7 @@ export const statusClassMap: Record<Status, string> = {
   'In progress': 'in-progress',
   'Waiting for customer': 'waiting',
   'Follow up': 'follow-up',
+  'Needs approval': 'needs-approval',
   'Escalated': 'escalated',
   'Resolved': 'resolved',
 };

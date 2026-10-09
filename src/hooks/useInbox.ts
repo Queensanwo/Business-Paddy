@@ -25,6 +25,7 @@ interface UseInboxReturn {
   addNote: (conversationId: string, text: string) => void;
   resolveConversation: (conversationId: string) => void;
   escalateConversation: (conversationId: string, managerId: string, reason: string, note: string) => void;
+  changeStatus: (conversationId: string, statusLabel: string) => void;
   toggleMobileMenu: () => void;
   closeMobileMenu: () => void;
   goBackToList: () => void;
@@ -178,6 +179,24 @@ export function useInbox(): UseInboxReturn {
     [postAction],
   );
 
+  const changeStatus = useCallback(
+    (conversationId: string, statusLabel: string) => {
+      const map: Record<string, string> = {
+        'New': 'NEW',
+        'In progress': 'IN_PROGRESS',
+        'Waiting for customer': 'WAITING_FOR_CUSTOMER',
+        'Follow up': 'FOLLOW_UP',
+        'Needs approval': 'NEEDS_APPROVAL',
+        'Escalated': 'ESCALATED',
+        'Resolved': 'RESOLVED',
+      };
+      const status = map[statusLabel];
+      if (!status) return;
+      postAction('/api/inbox/status', { conversationId, status });
+    },
+    [postAction],
+  );
+
   const toggleMobileMenu = useCallback(() => {
     setIsMobileMenuOpen(prev => !prev);
   }, []);
@@ -216,6 +235,7 @@ export function useInbox(): UseInboxReturn {
     addNote,
     resolveConversation,
     escalateConversation,
+    changeStatus,
     toggleMobileMenu,
     closeMobileMenu,
     goBackToList,

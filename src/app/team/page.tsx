@@ -27,6 +27,23 @@ export default function TeamPage() {
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState<StaffUser | null>(null);
+  const [teamMsg, setTeamMsg] = useState('');
+
+  async function removeStaff(id: string) {
+    setTeamMsg('');
+    try {
+      const res = await fetch(`/api/team/${id}`, { method: 'DELETE' });
+      const json = (await res.json()) as { removed?: boolean; name?: string; error?: string };
+      if (!res.ok) throw new Error(json.error || 'Could not remove.');
+      setStaff((prev) => prev.filter((s) => s.id !== id));
+      setTeamMsg(`${json.name ?? 'Staff member'} removed. Their conversations returned to the shared queue.`);
+      setConfirmRemove(null);
+    } catch (err) {
+      setTeamMsg(err instanceof Error ? err.message : 'Could not remove.');
+      setConfirmRemove(null);
+    }
+  }
 
   useEffect(() => {
     fetch('/api/team')
@@ -150,14 +167,37 @@ export default function TeamPage() {
           {loadState === 'ready' ? (
             <article className="card received">
               <div className="label">Staff ({staff.length})</div>
+              {teamMsg ? <p className="assignee" style={{ marginTop: '8px' }}>{teamMsg}</p> : null}
               <div className="conv-list" style={{ marginTop: '10px' }}>
                 {staff.map((s) => (
                   <div key={s.id} className="conv" style={{ cursor: 'default' }}>
                     <div className="conv-top">
                       <strong>{s.name}</strong>
-                      <span className="status">{roleLabel(s.role)}</span>
+                      <span>
+                        <span className="status">{roleLabel(s.role)}</span>
+                        {user && s.id !== user.id ? (
+                          <>
+                            {' '}
+                            <button
+                              type="button"
+                              aria-label={`Remove ${s.name}`}
+                              style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--coral)', fontWeight: 700 }}
+                              onClick={() => setConfirmRemove(s)}
+                            >
+                              Remove
+                            </button>
+                          </>
+                        ) : null}
+                      </span>
                     </div>
                     <div className="preview">{s.email}</div>
+                    {confirmRemove?.id === s.id ? (
+                      <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <span className="assignee">Remove {s.name}? Their chats return to the queue.</span>
+                        <button className="chip" type="button" onClick={() => removeStaff(s.id)}>Yes, remove</button>
+                        <button className="chip" type="button" onClick={() => setConfirmRemove(null)}>Keep</button>
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>
