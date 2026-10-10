@@ -20,6 +20,8 @@ interface GuestThread {
   guestName: string;
   status: string;
   messages: GuestMessage[];
+  feedbackEnabled?: boolean;
+  rating?: string | null;
 }
 
 export default function GuestReturnPage({ params }: { params: { token: string } }) {
@@ -36,6 +38,8 @@ export default function GuestReturnPage({ params }: { params: { token: string } 
   const [consent, setConsent] = useState(false);
   const [contactMsg, setContactMsg] = useState('');
   const [contactDone, setContactDone] = useState(false);
+  const [feedback, setFeedback] = useState('');
+  const [feedbackComment, setFeedbackComment] = useState('');
 
   useEffect(() => {
     fetch(`/api/paddy-chat/thread/${params.token}`)
@@ -110,6 +114,23 @@ export default function GuestReturnPage({ params }: { params: { token: string } 
     setBusy(false);
   }
 
+  async function onRate(rating: 'HELPFUL' | 'NOT_HELPFUL') {
+    setFeedback('');
+    try {
+      const res = await fetch(`/api/paddy-chat/thread/${params.token}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating, comment: feedbackComment }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(json.error || 'Could not save.');
+      setThread((prev) => (prev ? { ...prev, rating } : prev));
+      setFeedback(rating === 'HELPFUL' ? 'Thanks — glad we helped!' : 'Thanks — we will do better.');
+    } catch (err) {
+      setFeedback(err instanceof Error ? err.message : 'Could not save.');
+    }
+  }
+
   async function onSaveContact(e: React.FormEvent) {
     e.preventDefault();
     setContactMsg('');
@@ -181,6 +202,24 @@ export default function GuestReturnPage({ params }: { params: { token: string } 
               </form>
             ) : null}
             {contactDone && contactMsg ? <div className="assignee">{contactMsg}</div> : null}
+            {thread.status === 'Resolved' && thread.feedbackEnabled !== false ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', border: '1px solid var(--line)', borderRadius: '12px', padding: '10px 12px' }}>
+                <strong style={{ fontSize: '0.85rem' }}>Did we help?</strong>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button className="chip" type="button" onClick={() => onRate('HELPFUL')}>👍 Helpful</button>
+                  <button className="chip" type="button" onClick={() => onRate('NOT_HELPFUL')}>👎 Not helpful</button>
+                </div>
+                <input
+                  value={feedbackComment}
+                  onChange={(e) => setFeedbackComment(e.target.value)}
+                  placeholder="Tell us more (optional)"
+                  maxLength={500}
+                  style={{ border: '1px solid var(--line)', borderRadius: '8px', padding: '8px 10px', background: 'var(--off-white)', color: 'var(--ink)' }}
+                />
+                {feedback ? <div className="assignee">{feedback}</div> : null}
+                {thread.rating ? <div className="assignee">Your rating: {thread.rating === 'HELPFUL' ? 'Helpful' : 'Not helpful'} — tap again to change it.</div> : null}
+              </div>
+            ) : null}
             <form onSubmit={onReply} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px' }}>
               <textarea
                 value={text}

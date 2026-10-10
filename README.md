@@ -192,6 +192,7 @@ success message plus the recorded payment row.
 | 4 | 🟡 Internal reminders (built + tested 20/20, committed): create/assign/schedule/snooze/reschedule/complete/cancel with timezone + frequency, staff-only visibility (assignee/creator/managers), central Reminders page with overdue badge, per-thread follow-up that moves conversations to Follow up; APIs `/api/reminders`; recurrence auto-creation not yet built |
 | 4 | 🟡 Business branding (built + tested 17/17, uncommitted): logo upload/replace/remove (2 MB, magic-byte verified, theme untouched), 4 preset themes, custom accent with contrast check, curated suggestions applied only on approval, preview/save/cancel/restore, persists per business; APIs `/api/branding`; logo-colour extraction not yet built |
 | 5 | Reporting, Performance & Payments (Paystack) |
+| 5 | 🟡 Reports + feedback (built + tested 16/16, uncommitted): `/reports` page in plain language (received/answered/response rate/first-reply speed/resolved/overdue/happiness/escalations with reasons), per-person table + filter for managers, human-replies-only definitions; guest Helpful/Not helpful + comment after resolved chats with business on/off switch; APIs `/api/reports/summary`, guest feedback endpoint; owner reply-rating (FR31) and live Paystack test still pending |
 | 6 | Channel Connections, Ownership Handover, Ethics & Polish |
 
 ## Deployment (Future)

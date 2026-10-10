@@ -16,6 +16,7 @@ export interface ReplySettings {
   autoReplyEnabled: boolean;
   autoReplyGreeting: string | null;
   requireTraineeApproval: boolean;
+  feedbackEnabled: boolean;
 }
 
 function canManage(role: string): boolean {
@@ -32,6 +33,7 @@ export async function GET() {
         autoReplyEnabled: true,
         autoReplyGreeting: true,
         requireTraineeApproval: true,
+        feedbackEnabled: true,
       },
     });
     if (!ws) throw new InboxApiError(404, 'Workspace not found.');
@@ -56,6 +58,7 @@ export async function PUT(req: Request) {
       autoReplyEnabled?: unknown;
       autoReplyGreeting?: unknown;
       requireTraineeApproval?: unknown;
+      feedbackEnabled?: unknown;
     };
     const toneGuidance =
       typeof body.toneGuidance === 'string' ? body.toneGuidance.trim().slice(0, 500) || null : undefined;
@@ -67,6 +70,9 @@ export async function PUT(req: Request) {
     if (typeof body.requireTraineeApproval !== 'undefined' && typeof body.requireTraineeApproval !== 'boolean') {
       return NextResponse.json({ error: 'requireTraineeApproval must be true or false.' }, { status: 400 });
     }
+    if (typeof body.feedbackEnabled !== 'undefined' && typeof body.feedbackEnabled !== 'boolean') {
+      return NextResponse.json({ error: 'feedbackEnabled must be true or false.' }, { status: 400 });
+    }
     const ws = await db.workspace.update({
       where: { id: staff.workspaceId },
       data: {
@@ -76,12 +82,14 @@ export async function PUT(req: Request) {
         ...(typeof body.requireTraineeApproval === 'boolean'
           ? { requireTraineeApproval: body.requireTraineeApproval }
           : {}),
+        ...(typeof body.feedbackEnabled === 'boolean' ? { feedbackEnabled: body.feedbackEnabled } : {}),
       },
       select: {
         toneGuidance: true,
         autoReplyEnabled: true,
         autoReplyGreeting: true,
         requireTraineeApproval: true,
+        feedbackEnabled: true,
       },
     });
     await prisma.auditLog.create({

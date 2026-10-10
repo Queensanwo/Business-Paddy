@@ -305,7 +305,7 @@ export async function resolveConversation(
   return snapshotOf(await loadRows(workspaceId));
 }
 
-const ESCALATION_REASONS = [
+export const ESCALATION_REASONS = [
   'Difficult customer',
   'Refund request',
   'Technical issue',

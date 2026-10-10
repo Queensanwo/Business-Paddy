@@ -20,6 +20,8 @@ export interface GuestThread {
   guestName: string;
   status: string;
   messages: GuestMessage[];
+  feedbackEnabled: boolean;
+  rating: string | null;
 }
 
 function newGuestToken(): string {
@@ -39,7 +41,7 @@ export async function threadByToken(token: string) {
   const conv = await prisma.conversation.findUnique({
     where: { guestToken: token },
     include: {
-      workspace: { select: { id: true, name: true } },
+      workspace: { select: { id: true, name: true, feedbackEnabled: true } },
       customer: true,
       messages: {
         orderBy: { createdAt: 'asc' },
@@ -56,10 +58,13 @@ function toGuestThread(
 ): GuestThread {
   // Guests only ever see customer and staff messages — never internal notes.
   const visible = conv.messages.filter((m) => m.kind === 'CUSTOMER' || m.kind === 'STAFF');
+  const ws = conv.workspace as unknown as { name: string; feedbackEnabled?: boolean };
   return {
-    businessName: conv.workspace.name,
+    businessName: ws.name,
     guestName: conv.customer?.name ?? 'Guest',
     status: conv.status,
+    feedbackEnabled: ws.feedbackEnabled !== false,
+    rating: (conv as unknown as { rating?: string | null }).rating ?? null,
     messages: visible.map((m) => ({
       who: m.senderName,
       role: m.kind === 'STAFF' ? ('staff' as const) : ('customer' as const),

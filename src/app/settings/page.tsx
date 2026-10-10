@@ -393,6 +393,7 @@ interface ReplySettings {
   autoReplyEnabled: boolean;
   autoReplyGreeting: string | null;
   requireTraineeApproval: boolean;
+  feedbackEnabled: boolean;
 }
 
 interface ApprovalRow {
@@ -408,6 +409,7 @@ function ReplyControlsCard({ canManage }: { canManage: boolean }) {
   const [greeting, setGreeting] = useState('');
   const [autoOn, setAutoOn] = useState(false);
   const [traineeApproval, setTraineeApproval] = useState(true);
+  const [feedbackOn, setFeedbackOn] = useState(true);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -422,6 +424,7 @@ function ReplyControlsCard({ canManage }: { canManage: boolean }) {
           setGreeting(s.autoReplyGreeting ?? '');
           setAutoOn(s.autoReplyEnabled);
           setTraineeApproval(s.requireTraineeApproval);
+          setFeedbackOn(s.feedbackEnabled !== false);
         }
       })
       .catch(() => {});
@@ -440,7 +443,8 @@ function ReplyControlsCard({ canManage }: { canManage: boolean }) {
           autoReplyEnabled: autoOn,
           autoReplyGreeting: greeting,
           requireTraineeApproval: traineeApproval,
-        }),
+          feedbackEnabled: feedbackOn,
+        })
       });
       const json = (await res.json()) as { settings?: ReplySettings; error?: string };
       if (!res.ok || !json.settings) throw new Error(json.error || 'Could not save.');
@@ -487,6 +491,10 @@ function ReplyControlsCard({ canManage }: { canManage: boolean }) {
           <label className="auth-field" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
             <input type="checkbox" checked={traineeApproval} onChange={(e) => setTraineeApproval(e.target.checked)} disabled={!canManage} />
             Trainee replies need owner/manager approval
+          </label>
+          <label className="auth-field" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
+            <input type="checkbox" checked={feedbackOn} onChange={(e) => setFeedbackOn(e.target.checked)} disabled={!canManage} />
+            Ask customers for a Helpful / Not helpful rating after resolved chats
           </label>
           {msg ? <p className="assignee">{msg}</p> : null}
           {canManage ? (

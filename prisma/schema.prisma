@@ -80,6 +80,9 @@ model Workspace {
   siteProducts    String?
   siteHours       String?
   siteContact     String?
+  // Phase 5 customer feedback (FR36/FR37): one-tap rating after resolution.
+  // The business can switch requests off; stored per conversation.
+  feedbackEnabled Boolean @default(true)
   users        User[]
   customers    Customer[]
   conversations Conversation[]
@@ -202,6 +205,10 @@ model Conversation {
   assigneeId  String?
   assignee    User?      @relation("Assignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   preview     String?
+  // Phase 5 customer feedback: one-tap Helpful/Not helpful with optional comment.
+  rating          String?
+  feedbackComment String?
+  feedbackAt      DateTime?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 

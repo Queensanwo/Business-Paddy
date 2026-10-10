@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-export type NavSection = 'inbox' | 'customers' | 'team' | 'settings' | 'workspace' | 'reminders';
+export type NavSection = 'inbox' | 'customers' | 'team' | 'settings' | 'workspace' | 'reminders' | 'reports';
 
 interface NavigationProps {
   isOpen: boolean;
@@ -72,6 +72,7 @@ export function Navigation({
           <a className={active === 'inbox' ? 'active' : ''} href="/inbox">Inbox{totalCount > 0 ? <span className="count">{totalCount}</span> : null}</a>
           <a className={active === 'customers' ? 'active' : ''} href="/customers">Customers</a>
           <a className={active === 'reminders' ? 'active' : ''} href="/reminders">Reminders{reminderCount > 0 ? <span className="count">{reminderCount}</span> : null}</a>
+          <a className={active === 'reports' ? 'active' : ''} href="/reports">Reports</a>
           <a className={active === 'team' ? 'active' : ''} href="/team">Team</a>
           <a className={active === 'settings' ? 'active' : ''} href="/settings">Settings</a>
           <a className={active === 'workspace' ? 'active' : ''} href="/workspace">Workspace</a>
