@@ -26,6 +26,7 @@ interface UseInboxReturn {
   requestAiDraft: (conversationId: string) => Promise<{ draft: string; tone: string | null }>;
   submitApproval: (conversationId: string, text: string) => void;
   decideApproval: (approvalId: string, decision: 'approve' | 'reject', reason?: string) => void;
+  deliveryNotice: string | null;
   addNote: (conversationId: string, text: string) => void;
   resolveConversation: (conversationId: string) => void;
   escalateConversation: (conversationId: string, managerId: string, reason: string, note: string) => void;
@@ -67,6 +68,7 @@ export function useInbox(): UseInboxReturn {
   const [loadError, setLoadError] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isListMode, setIsListMode] = useState(true);
+  const [deliveryNotice, setDeliveryNotice] = useState<string | null>(null);
 
   useEffect(() => {
     fetchInbox()
@@ -106,7 +108,20 @@ export function useInbox(): UseInboxReturn {
             throw new Error('Sign in required.');
           }
           if (!res.ok) throw new Error('Reply request failed.');
-          setInbox(toState((await res.json()) as InboxPayload));
+          const json = (await res.json()) as InboxPayload & {
+            delivery?: { attempted?: boolean; sent?: boolean; error?: string };
+          };
+          setInbox(toState(json));
+          // Surface channel delivery for WhatsApp threads; other channels
+          // are local-only and need no notice.
+          const wasWhatsApp = inbox.conversations.find((c) => c.id === selectedId)?.channel === 'whatsapp';
+          if (wasWhatsApp && json.delivery) {
+            if (json.delivery.sent) setDeliveryNotice('Saved and sent on WhatsApp.');
+            else if (json.delivery.attempted) setDeliveryNotice(`Saved locally. WhatsApp not sent: ${json.delivery.error ?? 'unknown error'}`);
+            else setDeliveryNotice('Saved locally. WhatsApp is not connected for this business.');
+          } else {
+            setDeliveryNotice(null);
+          }
         })
         .catch(() => {
           // Roll back to the persisted state on failure.
@@ -115,7 +130,7 @@ export function useInbox(): UseInboxReturn {
             .catch(() => {});
         });
     },
-    [selectedId],
+    [selectedId, inbox],
   );
 
   const assignConversation = useCallback((conversationId: string, assigneeId: string | null) => {
@@ -327,6 +342,7 @@ export function useInbox(): UseInboxReturn {
     resolveConversation,
     escalateConversation,
     changeStatus,
+    deliveryNotice,
     toggleMobileMenu,
     closeMobileMenu,
     goBackToList,

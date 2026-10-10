@@ -7,6 +7,7 @@ import {
   channelLabel,
 } from '@/types/conversation';
 import { Channel as DbChannel, ConvStatus, MessageKind, Prisma } from '@prisma/client';
+import type { ChannelDelivery } from '@/server/whatsapp';
 
 export const DEMO_WORKSPACE_ID = 'demo-workspace-1';
 
@@ -425,7 +426,7 @@ export async function saveReply(
   text: string,
   sender: string,
   attachments: ReplyAttachment[] = [],
-): Promise<InboxSnapshot> {
+): Promise<InboxSnapshot & { delivery: ChannelDelivery }> {
   const trimmed = text.trim();
   if (!trimmed && attachments.length === 0) {
     throw new InboxApiError(400, 'Reply text or an attachment is required.');
@@ -450,23 +451,25 @@ export async function saveReply(
 
   const hadStaffReply = existing.messages.some((m) => m.kind === 'STAFF');
 
-  await prisma.$transaction([
-    prisma.message.create({
-      data: {
-        conversationId,
-        kind: 'STAFF',
-        senderName: sender,
-        text: trimmed || '(attachment)',
-        attachments: {
-          create: attachments.map((a) => ({
-            fileName: a.fileName.slice(0, 120),
-            mimeType: a.mimeType.slice(0, 80),
-            sizeBytes: Math.floor(a.sizeBytes),
-            storageKey: a.storageKey,
-          })),
-        },
+  // Create the message first so channel sends can reference its id.
+  const created = await prisma.message.create({
+    data: {
+      conversationId,
+      kind: 'STAFF',
+      senderName: sender,
+      text: trimmed || '(attachment)',
+      attachments: {
+        create: attachments.map((a) => ({
+          fileName: a.fileName.slice(0, 120),
+          mimeType: a.mimeType.slice(0, 80),
+          sizeBytes: Math.floor(a.sizeBytes),
+          storageKey: a.storageKey,
+        })),
       },
-    }),
+    },
+    select: { id: true },
+  });
+  await prisma.$transaction([
     prisma.conversation.update({
       where: { id: conversationId },
       data: {
@@ -488,7 +491,18 @@ export async function saveReply(
 
   await notifyGuestReply(conversationId);
 
-  return snapshotOf(await loadRows(workspaceId));
+  // Best-effort WhatsApp send for WhatsApp threads. The local message stands
+  // regardless; delivery reports what happened on the channel.
+  let delivery: ChannelDelivery = { attempted: false, sent: false };
+  try {
+    const { tryChannelSend } = await import('@/server/whatsapp');
+    delivery = await tryChannelSend({ workspaceId, conversationId, messageId: created.id, text: trimmed });
+  } catch (e) {
+    console.error('channel send failed', e);
+    delivery = { attempted: true, sent: false, error: 'Channel send failed.' };
+  }
+
+  return { ...(await loadInbox(workspaceId)), delivery };
 }
 
 export { channelLabel };

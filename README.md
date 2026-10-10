@@ -163,6 +163,36 @@ app (stop the terminal with Ctrl+C, then `npm run dev`). Then open Settings,
 press Test Premium Upgrade, pay with a Paystack test card, and confirm the
 success message plus the recorded payment row.
 
+## WhatsApp test integration (Meta Cloud API — keys required to send/receive)
+
+Replies on WhatsApp threads send for real through Meta only when all five
+server-only variables are set (placeholders in `.env.example`, values entered
+privately, never displayed or committed):
+
+```bash
+WHATSAPP_TOKEN=""
+WHATSAPP_PHONE_NUMBER_ID=""
+WHATSAPP_BUSINESS_ACCOUNT_ID=""
+WHATSAPP_VERIFY_TOKEN=""
+META_APP_SECRET=""
+```
+
+Flow: Settings → WhatsApp connection → Connect links the business to the test
+number (demo workspaces are refused and stay simulated). Inbox replies and
+approved replies then send via the Cloud API; the provider message ID is stored
+and the composer reports sent / not-sent. Incoming messages arrive at
+`POST /api/webhooks/whatsapp` (verify with `WHATSAPP_VERIFY_TOKEN` during Meta
+setup, `X-Hub-Signature-256` checked with `META_APP_SECRET`, duplicates skipped
+by provider ID, unknown numbers ignored, each number routed to exactly one
+linked workspace). Without the keys, everything degrades honestly: replies save
+locally, connect shows setup guidance, webhook returns 503/403.
+
+Limits (test phase): text messages only (media arrives as a labelled
+placeholder), no template sending outside Meta's 24-hour window (API errors are
+reported, not hidden), delivery statuses ignored, one shared test number per
+server. Tested 24/24 (18 webhook/unit + 6 fallback); live send/receive with real
+credentials still pending the owner's keys.
+
 ## Roadmap (Planned)
 
 | Phase | Focus |

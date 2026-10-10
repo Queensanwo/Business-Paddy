@@ -34,6 +34,7 @@ export default function InboxPage() {
     resolveConversation,
     escalateConversation,
     changeStatus,
+    deliveryNotice,
     toggleMobileMenu,
     closeMobileMenu,
     goBackToList,
@@ -177,6 +178,7 @@ export default function InboxPage() {
           canAssignOthers={canAssignOthers}
           staff={staff}
           onAssign={assignConversation}
+          deliveryNotice={deliveryNotice}
         />
       </section>
     </div>

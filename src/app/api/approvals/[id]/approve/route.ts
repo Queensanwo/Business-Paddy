@@ -40,15 +40,16 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     });
     if (!conv) throw new InboxApiError(404, 'Conversation not found.');
     const hadStaffReply = conv.messages.some((m) => m.kind === 'STAFF');
+    const created = await prisma.message.create({
+      data: {
+        conversationId: conv.id,
+        kind: 'STAFF',
+        senderName: staff.name,
+        text: row.text,
+      },
+      select: { id: true },
+    });
     await prisma.$transaction([
-      prisma.message.create({
-        data: {
-          conversationId: conv.id,
-          kind: 'STAFF',
-          senderName: staff.name,
-          text: row.text,
-        },
-      }),
       prisma.conversation.update({
         where: { id: conv.id },
         data: {
@@ -70,7 +71,21 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
         },
       }),
     ]);
-    return NextResponse.json({ approved: true, snapshot: await loadInbox(staff.workspaceId) });
+    // Best-effort WhatsApp send; the approval stands regardless.
+    let delivery = { attempted: false, sent: false } as import('@/server/whatsapp').ChannelDelivery;
+    try {
+      const { tryChannelSend } = await import('@/server/whatsapp');
+      delivery = await tryChannelSend({
+        workspaceId: staff.workspaceId,
+        conversationId: conv.id,
+        messageId: created.id,
+        text: row.text,
+      });
+    } catch (e) {
+      console.error('channel send failed', e);
+      delivery = { attempted: true, sent: false, error: 'Channel send failed.' };
+    }
+    return NextResponse.json({ approved: true, delivery, snapshot: await loadInbox(staff.workspaceId) });
   } catch (e) {
     if (e instanceof InboxApiError) {
       return NextResponse.json({ error: e.message }, { status: e.status });

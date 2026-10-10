@@ -47,6 +47,7 @@ interface ConversationThreadProps {
   canAssignOthers: boolean;
   staff: AssignableStaff[];
   onAssign: (conversationId: string, assigneeId: string | null) => void;
+  deliveryNotice?: string | null;
 }
 
 function AttachmentView({ a }: { a: { id: string; fileName: string; mimeType: string } }) {
@@ -88,6 +89,7 @@ export function ConversationThread({
   canAssignOthers,
   staff,
   onAssign,
+  deliveryNotice,
 }: ConversationThreadProps) {
   const [pending, setPending] = useState<PendingAttachment[]>([]);
   const [uploadNote, setUploadNote] = useState('');
@@ -354,6 +356,7 @@ export function ConversationThread({
         )}
       </div>
       <button className="send" type="submit">{mode === 'note' ? 'Save Note' : 'Send Reply'}</button>
+      {deliveryNotice ? <div className="assignee" style={{ marginTop: '4px' }}>{deliveryNotice}</div> : null}
       {mode === 'reply' && replyText.trim() ? (
         <button
           className="chip"
