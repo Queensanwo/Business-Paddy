@@ -134,6 +134,14 @@ After editing `.env`, restart the app (Ctrl+C, then `npm run dev`). Without a
 key, invites show setup guidance and nothing is emailed; the live email test
 is pending a configured key.
 
+## Owner welcome email (Resend — same key)
+
+New workspace owners get a welcome email with their Paddy Chat link
+(`/chat/[workspaceId]`) and business page link (`/site/[workspaceId]`) — the
+same links shown in-app on the Workspace page and under Settings. Sending never
+breaks signup (failures are logged; tested 7/7 with the test sender rejecting).
+Staff invitees don't get one (the invitation email already covers them).
+
 ## Billing (Paystack test mode — key required for live checkout)
 
 The Settings page has a Billing section with a Test Premium Upgrade button
