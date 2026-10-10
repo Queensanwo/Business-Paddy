@@ -113,6 +113,69 @@ button, input, textarea, select {
   overflow-wrap: break-word;
 }
 
+/* ---------- Settings menu (phone-style list) ---------- */
+.menu-group {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 14px 4px 8px;
+}
+
+.menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+a.menu-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--ink);
+  min-height: 64px;
+}
+
+a.menu-row:hover {
+  border-color: var(--navy-mid);
+}
+
+a.menu-row:focus-visible {
+  outline: 3px solid var(--navy-mid);
+  outline-offset: 2px;
+}
+
+.menu-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+  width: 32px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.menu-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 0.95rem;
+}
+
+.menu-arrow {
+  margin-left: auto;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
 /* ---------- Business branding themes (Phase 4b) ----------
    Scoped to .app so the public landing page keeps its own design.
    Layout never changes — only brand colours. NAVY is the default
