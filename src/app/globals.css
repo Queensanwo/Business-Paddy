@@ -117,7 +117,7 @@ button, input, textarea, select {
    Scoped to .app so the public landing page keeps its own design.
    Layout never changes — only brand colours. NAVY is the default
    (no overrides); a custom accent wins over the preset via --navy. */
-.app[data-theme="SLATE"] {
+:is(.app, .site)[data-theme="SLATE"] {
   --navy: #526BB1;
   --navy-deep: #33406E;
   --navy-mid: #526BB1;
@@ -126,7 +126,7 @@ button, input, textarea, select {
   --shadow: 0 10px 30px rgba(82, 107, 177, 0.12);
 }
 
-.app[data-theme="PLUM"] {
+:is(.app, .site)[data-theme="PLUM"] {
   --navy: #6E2F56;
   --navy-deep: #471C38;
   --navy-mid: #8A4370;
@@ -135,7 +135,7 @@ button, input, textarea, select {
   --shadow: 0 10px 30px rgba(110, 47, 86, 0.12);
 }
 
-.app[data-theme="TERRACOTTA"] {
+:is(.app, .site)[data-theme="TERRACOTTA"] {
   --navy: #A9502C;
   --navy-deep: #6F3418;
   --navy-mid: #C06A3F;
@@ -144,7 +144,7 @@ button, input, textarea, select {
   --shadow: 0 10px 30px rgba(169, 80, 44, 0.12);
 }
 
-.app[data-accent] {
+:is(.app, .site)[data-accent] {
   --navy: var(--accent);
   --navy-mid: var(--accent);
   --navy-deep: var(--accent-deep, var(--accent));

@@ -73,6 +73,13 @@ model Workspace {
   accentColor     String?
   logoStorageKey  String?
   logoMime        String?
+  // Phase 4c business website front: owner-maintained public page. Only these
+  // fields (plus name/logo/theme) are ever public — never customer data.
+  siteEnabled     Boolean @default(true)
+  siteDescription String?
+  siteProducts    String?
+  siteHours       String?
+  siteContact     String?
   users        User[]
   customers    Customer[]
   conversations Conversation[]

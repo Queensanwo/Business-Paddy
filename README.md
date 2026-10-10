@@ -180,7 +180,7 @@ success message plus the recorded payment row.
 | 3 | Reply Tools, Automation & AI |
 | 3 | 🟡 Saved replies + macros (built + tested, uncommitted): approved replies with composer insert; one-click macros insert text and run assign/status/escalate; owner/manager manage, all roles use |
 | 3 | 🟡 AI drafts + tone + auto-replies + approvals (built + tested 18/18, uncommitted): mock AI draft with review-before-send, tone guidance, owner opt-in Paddy Chat greeting, approval queue with trainee/NEEDS_APPROVAL enforcement; APIs `/api/ai-draft`, `/api/reply-settings`, `/api/approvals` |
-| 4 | Customer Intelligence, Cross-Channel & Branding |
+| 4 | 🟡 Business website front (built + tested 13/13, uncommitted): owner-maintained public page per business (`/site/[workspaceId]`) with description/products/hours/contact, visibility toggle, chat-into-Paddy-Chat button, workspace theme applied, public API exposes only public fields (verified); paid theme picker + slug URLs not yet built |
 | 4 | 🟡 Internal reminders (built + tested 20/20, committed): create/assign/schedule/snooze/reschedule/complete/cancel with timezone + frequency, staff-only visibility (assignee/creator/managers), central Reminders page with overdue badge, per-thread follow-up that moves conversations to Follow up; APIs `/api/reminders`; recurrence auto-creation not yet built |
 | 4 | 🟡 Business branding (built + tested 17/17, uncommitted): logo upload/replace/remove (2 MB, magic-byte verified, theme untouched), 4 preset themes, custom accent with contrast check, curated suggestions applied only on approval, preview/save/cancel/restore, persists per business; APIs `/api/branding`; logo-colour extraction not yet built |
 | 5 | Reporting, Performance & Payments (Paystack) |
