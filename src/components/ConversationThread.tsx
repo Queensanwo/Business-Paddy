@@ -27,9 +27,18 @@ const STATUS_OPTIONS = [
   'Resolved',
 ] as const;
 
+interface MacroRow {
+  id: string;
+  title: string;
+  body: string;
+}
+
 interface ConversationThreadProps {
   conversation: Conversation | undefined;
   onSendReply: (text: string, attachments: PendingAttachment[]) => void;
+  onRunMacro: (macroId: string) => Promise<string>;
+  onRequestAiDraft: () => Promise<{ draft: string; tone: string | null }>;
+  onSubmitApproval: (text: string) => void;
   onAddNote: (text: string) => void;
   onResolve: (conversationId: string) => void;
   onEscalate: (conversationId: string, managerId: string, reason: string, note: string) => void;
@@ -68,6 +77,9 @@ function AttachmentView({ a }: { a: { id: string; fileName: string; mimeType: st
 export function ConversationThread({
   conversation,
   onSendReply,
+  onRunMacro,
+  onRequestAiDraft,
+  onSubmitApproval,
   onAddNote,
   onResolve,
   onEscalate,
@@ -81,6 +93,10 @@ export function ConversationThread({
   const [uploadNote, setUploadNote] = useState('');
   const [mode, setMode] = useState<'reply' | 'note'>('reply');
   const [savedReplies, setSavedReplies] = useState<{ id: string; title: string; body: string }[]>([]);
+  const [macros, setMacros] = useState<MacroRow[]>([]);
+  const [macroMsg, setMacroMsg] = useState('');
+  const [aiMsg, setAiMsg] = useState('');
+  const [aiBusy, setAiBusy] = useState(false);
 
   useEffect(() => {
     fetch('/api/saved-replies')
@@ -90,7 +106,38 @@ export function ConversationThread({
       })
       .then((data) => setSavedReplies((data as { replies: { id: string; title: string; body: string }[] }).replies ?? []))
       .catch(() => setSavedReplies([]));
+    fetch('/api/macros')
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then((data) => setMacros((data as { macros: MacroRow[] }).macros ?? []))
+      .catch(() => setMacros([]));
   }, []);
+
+  async function applyMacro(macroId: string) {
+    if (!macroId) return;
+    setMacroMsg('');
+    try {
+      const text = await onRunMacro(macroId);
+      if (text) setReplyText((prev) => (prev ? `${prev}\n${text}` : text));
+    } catch (err) {
+      setMacroMsg(err instanceof Error ? err.message : 'Macro failed.');
+    }
+  }
+
+  async function applyAiDraft() {
+    setAiMsg('');
+    setAiBusy(true);
+    try {
+      const { draft } = await onRequestAiDraft();
+      setReplyText((prev) => (prev ? `${prev}\n${draft}` : draft));
+      setAiMsg('AI draft inserted — review before sending.');
+    } catch (err) {
+      setAiMsg(err instanceof Error ? err.message : 'Draft failed.');
+    }
+    setAiBusy(false);
+  }
   const [escalating, setEscalating] = useState(false);
   const [escManager, setEscManager] = useState('');
   const [escReason, setEscReason] = useState('Difficult customer');
@@ -196,6 +243,27 @@ export function ConversationThread({
         {uploadNote ? <div className="assignee" style={{ marginTop: '4px' }}>{uploadNote}</div> : null}
         {mode === 'reply' ? (
           <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+            {macros.length > 0 ? (
+              <select
+                aria-label="Run macro"
+                defaultValue=""
+                onChange={(e) => {
+                  applyMacro(e.target.value);
+                  e.target.value = '';
+                }}
+                style={{ border: '1px solid var(--line)', borderRadius: '999px', padding: '5px 10px', fontSize: '0.75rem', background: 'var(--off-white)', color: 'var(--ink)' }}
+              >
+                <option value="">Macros…</option>
+                {macros.map((m) => (
+                  <option key={m.id} value={m.id}>{m.title}</option>
+                ))}
+              </select>
+            ) : null}
+            {macroMsg ? <span className="assignee">{macroMsg}</span> : null}
+            <button type="button" className="chip" disabled={aiBusy} onClick={applyAiDraft}>
+              {aiBusy ? 'Drafting…' : 'AI draft'}
+            </button>
+            {aiMsg ? <span className="assignee">{aiMsg}</span> : null}
             {savedReplies.length > 0 ? (
               <select
                 aria-label="Insert saved reply"
@@ -236,6 +304,19 @@ export function ConversationThread({
         )}
       </div>
       <button className="send" type="submit">{mode === 'note' ? 'Save Note' : 'Send Reply'}</button>
+      {mode === 'reply' && replyText.trim() ? (
+        <button
+          className="chip"
+          type="button"
+          onClick={() => {
+            onSubmitApproval(replyText);
+            setReplyText('');
+            setPending([]);
+          }}
+        >
+          Submit for approval
+        </button>
+      ) : null}
     </form>
   );
 

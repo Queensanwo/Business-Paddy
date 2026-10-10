@@ -1,5 +1,6 @@
 import { headers } from 'next/headers';
 import { auth } from '@/server/auth';
+import { prisma } from '@/lib/db';
 import { InboxApiError } from '@/server/inboxStore';
 
 export interface StaffContext {
@@ -24,11 +25,21 @@ export async function requireStaff(): Promise<StaffContext> {
   ) {
     throw new InboxApiError(401, 'Sign in required.');
   }
+  // Removed or deleted staff lose access immediately, even if their session
+  // cookie has not expired yet. Role/workspace always come from the database,
+  // never from the session alone.
+  const current = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { id: true, name: true, email: true, workspaceId: true, role: true },
+  });
+  if (!current) {
+    throw new InboxApiError(401, 'Sign in required.');
+  }
   return {
-    userId: user.id,
-    workspaceId: user.workspaceId,
-    role: user.role,
-    name: typeof user.name === 'string' ? user.name : 'Staff',
-    email: typeof user.email === 'string' ? user.email : '',
+    userId: current.id,
+    workspaceId: current.workspaceId,
+    role: current.role,
+    name: current.name,
+    email: current.email,
   };
 }

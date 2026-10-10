@@ -61,6 +61,12 @@ model Workspace {
   contactPhone String?
   mode         WorkspaceMode  @default(DEMO)
   createdAt    DateTime       @default(now())
+  // Phase 3 reply controls (FR19/FR21/FR22). Mock-safe defaults: AI drafts
+  // always require review; auto-replies off until the owner enables them.
+  toneGuidance           String?
+  autoReplyEnabled       Boolean @default(false)
+  autoReplyGreeting      String?
+  requireTraineeApproval Boolean @default(true)
   users        User[]
   customers    Customer[]
   conversations Conversation[]
@@ -70,6 +76,8 @@ model Workspace {
   payments     Payment[]
   invitations  StaffInvitation[]
   savedReplies SavedReply[]
+  macros       Macro[]
+  approvals    ApprovalRequest[]
 }
 
 model User {
@@ -276,6 +284,24 @@ model StaffInvitation {
   @@index([workspaceId, email])
 }
 
+// Owner-approved macros: insert text plus run actions (FR20).
+model Macro {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  title       String
+  body        String   @default("")
+  assignUserId String?
+  status      ConvStatus?
+  escalateToId String?
+  escalateReason String?
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([workspaceId])
+}
+
 // Owner-approved reusable replies staff can insert and edit (FR17).
 model SavedReply {
   id          String   @id @default(cuid())
@@ -288,6 +314,24 @@ model SavedReply {
   updatedAt   DateTime @updatedAt
 
   @@index([workspaceId])
+}
+
+// Reply approval requests (FR22). Staff submit reply text for review;
+// an owner/manager approves (sends) or rejects. Review-before-send always.
+model ApprovalRequest {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  conversationId String
+  text           String
+  requestedById  String?
+  status         String    @default("PENDING")
+  reviewerId     String?
+  createdAt      DateTime  @default(now())
+  decidedAt      DateTime?
+
+  @@index([workspaceId, status])
+  @@index([conversationId])
 }
 
 model AuditLog {

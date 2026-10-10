@@ -114,6 +114,35 @@ export async function startGuestChat(
       entityId: conv.id,
     },
   });
+  // Controlled automatic reply (FR19): owner-approved greeting only, sent as a
+  // labelled staff message. Off by default; never fires without owner opt-in.
+  try {
+    const ws = workspace as unknown as {
+      autoReplyEnabled?: boolean;
+      autoReplyGreeting?: string | null;
+    };
+    const greeting = (ws.autoReplyGreeting ?? '').trim().slice(0, 500);
+    if (ws.autoReplyEnabled && greeting) {
+      await prisma.message.create({
+        data: {
+          conversationId: conv.id,
+          kind: 'STAFF',
+          senderName: `${workspace.name} (automatic reply)`,
+          text: greeting,
+        },
+      });
+      await prisma.auditLog.create({
+        data: {
+          workspaceId,
+          action: 'auto_reply.sent',
+          entityType: 'Conversation',
+          entityId: conv.id,
+        },
+      });
+    }
+  } catch (e) {
+    console.error('auto-reply send failed', e);
+  }
   return { token: conv.guestToken as string, conversationId: conv.id };
 }
 

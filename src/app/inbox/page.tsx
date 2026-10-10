@@ -26,6 +26,10 @@ export default function InboxPage() {
     selectConversation,
     sendReply,
     assignConversation,
+    runMacro,
+    requestAiDraft,
+    submitApproval,
+    decideApproval,
     addNote,
     resolveConversation,
     escalateConversation,
@@ -38,6 +42,7 @@ export default function InboxPage() {
   } = useInbox();
   const { user } = useSessionUser();
   const [staff, setStaff] = useState<AssignableStaff[]>([]);
+  const [approvals, setApprovals] = useState<{ id: string; conversationId: string; text: string }[]>([]);
 
   useEffect(() => {
     fetch('/api/team')
@@ -48,6 +53,15 @@ export default function InboxPage() {
       .then((data) => setStaff((data as { users: AssignableStaff[] }).users ?? []))
       .catch(() => setStaff([]));
   }, []);
+
+  const canReview = user?.role === 'OWNER' || user?.role === 'MANAGER';
+  useEffect(() => {
+    if (!canReview) return;
+    fetch('/api/approvals')
+      .then((res) => (res.ok ? res.json() : { approvals: [] }))
+      .then((json) => setApprovals((json as { approvals: { id: string; conversationId: string; text: string }[] }).approvals ?? []))
+      .catch(() => {});
+  }, [canReview, conversations.length]);
 
   const answered = conversations.length - unansweredIds.size;
   const canAssignOthers = user?.role === 'OWNER' || user?.role === 'MANAGER';
@@ -119,9 +133,30 @@ export default function InboxPage() {
           answered={answered}
           unanswered={unansweredIds.size}
         />
+        {canReview && approvals.length > 0 ? (
+          <div className="card received" style={{ marginBottom: '10px' }}>
+            <div className="label">Pending approvals ({approvals.length})</div>
+            {approvals.slice(0, 5).map((a) => (
+              <div key={a.id} className="conv" style={{ cursor: 'default' }}>
+                <div className="preview" style={{ whiteSpace: 'normal' }}>{a.text.slice(0, 160)}</div>
+                <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                  <button className="chip" type="button" onClick={() => decideApproval(a.id, 'approve')}>
+                    Approve &amp; send
+                  </button>
+                  <button className="chip" type="button" onClick={() => decideApproval(a.id, 'reject')}>
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
         <ConversationThread
           conversation={conversations.find(c => c.id === selectedId)}
           onSendReply={sendReply}
+          onRunMacro={(macroId) => runMacro(selectedId, macroId)}
+          onRequestAiDraft={() => requestAiDraft(selectedId)}
+          onSubmitApproval={(text) => submitApproval(selectedId, text)}
           onAddNote={(text) => addNote(selectedId, text)}
           onResolve={resolveConversation}
           onEscalate={escalateConversation}

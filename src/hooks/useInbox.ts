@@ -22,6 +22,10 @@ interface UseInboxReturn {
   selectConversation: (id: string) => void;
   sendReply: (text: string, attachments?: { storageKey: string; fileName: string; mimeType: string; sizeBytes: number }[]) => void;
   assignConversation: (conversationId: string, assigneeId: string | null) => void;
+  runMacro: (conversationId: string, macroId: string) => Promise<string>;
+  requestAiDraft: (conversationId: string) => Promise<{ draft: string; tone: string | null }>;
+  submitApproval: (conversationId: string, text: string) => void;
+  decideApproval: (approvalId: string, decision: 'approve' | 'reject', reason?: string) => void;
   addNote: (conversationId: string, text: string) => void;
   resolveConversation: (conversationId: string) => void;
   escalateConversation: (conversationId: string, managerId: string, reason: string, note: string) => void;
@@ -135,6 +139,89 @@ export function useInbox(): UseInboxReturn {
       });
   }, []);
 
+  const runMacro = useCallback(async (conversationId: string, macroId: string): Promise<string> => {
+    const res = await fetch(`/api/macros/${macroId}/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conversationId }),
+    });
+    if (res.status === 401) {
+      redirectToSignIn();
+      throw new Error('Sign in required.');
+    }
+    const json = (await res.json()) as {
+      snapshot?: InboxPayload;
+      text?: string;
+      error?: string;
+    };
+    if (!res.ok) throw new Error(json.error || 'Macro failed.');
+    setInbox(toState(json.snapshot as InboxPayload));
+    return json.text ?? '';
+  }, []);
+
+  const requestAiDraft = useCallback(async (conversationId: string) => {
+    const res = await fetch('/api/ai-draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conversationId }),
+    });
+    if (res.status === 401) {
+      redirectToSignIn();
+      throw new Error('Sign in required.');
+    }
+    const json = (await res.json()) as { draft?: string; tone?: string | null; error?: string };
+    if (!res.ok || !json.draft) throw new Error(json.error || 'Draft failed.');
+    return { draft: json.draft, tone: json.tone ?? null };
+  }, []);
+
+  const submitApproval = useCallback(
+    (conversationId: string, text: string) => {
+      if (!text.trim()) return;
+      fetch('/api/approvals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId, text: text.trim() }),
+      })
+        .then(async (res) => {
+          if (res.status === 401) {
+            redirectToSignIn();
+            throw new Error('Sign in required.');
+          }
+          const json = (await res.json()) as { snapshot?: InboxPayload; error?: string };
+          if (!res.ok || !json.snapshot) throw new Error(json.error || 'Submit failed.');
+          setInbox(toState(json.snapshot));
+        })
+        .catch(() => {
+          fetchInbox()
+            .then(setInbox)
+            .catch(() => {});
+        });
+    },
+    [],
+  );
+
+  const decideApproval = useCallback((approvalId: string, decision: 'approve' | 'reject', reason?: string) => {
+    fetch(`/api/approvals/${approvalId}/${decision}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: reason ?? '' }),
+    })
+      .then(async (res) => {
+        if (res.status === 401) {
+          redirectToSignIn();
+          throw new Error('Sign in required.');
+        }
+        const json = (await res.json()) as { snapshot?: InboxPayload; error?: string };
+        if (!res.ok || !json.snapshot) throw new Error(json.error || 'Decision failed.');
+        setInbox(toState(json.snapshot));
+      })
+      .catch(() => {
+        fetchInbox()
+          .then(setInbox)
+          .catch(() => {});
+      });
+  }, []);
+
   const postAction = useCallback((url: string, body: Record<string, unknown>) => {
     fetch(url, {
       method: 'POST',
@@ -232,6 +319,10 @@ export function useInbox(): UseInboxReturn {
     selectConversation,
     sendReply,
     assignConversation,
+    runMacro,
+    requestAiDraft,
+    submitApproval,
+    decideApproval,
     addNote,
     resolveConversation,
     escalateConversation,

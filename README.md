@@ -178,6 +178,8 @@ success message plus the recorded payment row.
 | 2 | 🟡 Internal notes + resolve (built + tested, uncommitted): Reply/Note composer toggle, notes styled distinctly and hidden from guest views, Resolve button, audit-logged; APIs `POST /api/inbox/note`, `POST /api/inbox/resolve` |
 | 2 | ✅ Phase 2 complete (claim/assign, notes, resolve, escalation, all 7 statuses, reopening, staff removal — all tested) ||
 | 3 | Reply Tools, Automation & AI |
+| 3 | 🟡 Saved replies + macros (built + tested, uncommitted): approved replies with composer insert; one-click macros insert text and run assign/status/escalate; owner/manager manage, all roles use |
+| 3 | 🟡 AI drafts + tone + auto-replies + approvals (built + tested 18/18, uncommitted): mock AI draft with review-before-send, tone guidance, owner opt-in Paddy Chat greeting, approval queue with trainee/NEEDS_APPROVAL enforcement; APIs `/api/ai-draft`, `/api/reply-settings`, `/api/approvals` |
 | 4 | Customer Intelligence, Cross-Channel & Branding |
 | 5 | Reporting, Performance & Payments (Paystack) |
 | 6 | Channel Connections, Ownership Handover, Ethics & Polish |
