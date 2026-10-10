@@ -113,6 +113,51 @@ button, input, textarea, select {
   overflow-wrap: break-word;
 }
 
+/* ---------- Business branding themes (Phase 4b) ----------
+   Scoped to .app so the public landing page keeps its own design.
+   Layout never changes — only brand colours. NAVY is the default
+   (no overrides); a custom accent wins over the preset via --navy. */
+.app[data-theme="SLATE"] {
+  --navy: #526BB1;
+  --navy-deep: #33406E;
+  --navy-mid: #526BB1;
+  --off-white: #EEF1F6;
+  --paper: #FAFBFE;
+  --shadow: 0 10px 30px rgba(82, 107, 177, 0.12);
+}
+
+.app[data-theme="PLUM"] {
+  --navy: #6E2F56;
+  --navy-deep: #471C38;
+  --navy-mid: #8A4370;
+  --off-white: #F7F1F4;
+  --paper: #FDFBFD;
+  --shadow: 0 10px 30px rgba(110, 47, 86, 0.12);
+}
+
+.app[data-theme="TERRACOTTA"] {
+  --navy: #A9502C;
+  --navy-deep: #6F3418;
+  --navy-mid: #C06A3F;
+  --off-white: #F6F1EB;
+  --paper: #FCFAF7;
+  --shadow: 0 10px 30px rgba(169, 80, 44, 0.12);
+}
+
+.app[data-accent] {
+  --navy: var(--accent);
+  --navy-mid: var(--accent);
+  --navy-deep: var(--accent-deep, var(--accent));
+}
+
+.brand-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  object-fit: contain;
+  background: #fff;
+}
+
 /* ---------- Public landing page ---------- */
 .lp {
   background: #fff;

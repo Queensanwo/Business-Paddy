@@ -67,6 +67,12 @@ model Workspace {
   autoReplyEnabled       Boolean @default(false)
   autoReplyGreeting      String?
   requireTraineeApproval Boolean @default(true)
+  // Phase 4b business branding. Theme is a preset name; accentColor an optional
+  // custom hex applied on top. Logo stored via the local upload adapter.
+  theme           String  @default("NAVY")
+  accentColor     String?
+  logoStorageKey  String?
+  logoMime        String?
   users        User[]
   customers    Customer[]
   conversations Conversation[]
