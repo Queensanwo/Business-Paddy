@@ -1,11 +1,12 @@
 'use client';
 
-export type NavSection = 'inbox' | 'customers' | 'team' | 'settings' | 'workspace';
+export type NavSection = 'inbox' | 'customers' | 'team' | 'settings' | 'workspace' | 'reminders';
 
 interface NavigationProps {
   isOpen: boolean;
   onClose: () => void;
   totalCount?: number;
+  reminderCount?: number;
   active?: NavSection;
   userName?: string;
   userSub?: string;
@@ -15,6 +16,7 @@ export function Navigation({
   isOpen,
   onClose,
   totalCount = 0,
+  reminderCount = 0,
   active = 'inbox',
   userName = 'Business Paddy',
   userSub = 'Shared inbox',
@@ -33,6 +35,7 @@ export function Navigation({
         <nav className="nav-links">
           <a className={active === 'inbox' ? 'active' : ''} href="/inbox">Inbox{totalCount > 0 ? <span className="count">{totalCount}</span> : null}</a>
           <a className={active === 'customers' ? 'active' : ''} href="/customers">Customers</a>
+          <a className={active === 'reminders' ? 'active' : ''} href="/reminders">Reminders{reminderCount > 0 ? <span className="count">{reminderCount}</span> : null}</a>
           <a className={active === 'team' ? 'active' : ''} href="/team">Team</a>
           <a className={active === 'settings' ? 'active' : ''} href="/settings">Settings</a>
           <a className={active === 'workspace' ? 'active' : ''} href="/workspace">Workspace</a>

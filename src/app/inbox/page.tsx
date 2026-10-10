@@ -43,6 +43,7 @@ export default function InboxPage() {
   const { user } = useSessionUser();
   const [staff, setStaff] = useState<AssignableStaff[]>([]);
   const [approvals, setApprovals] = useState<{ id: string; conversationId: string; text: string }[]>([]);
+  const [dueReminders, setDueReminders] = useState(0);
 
   useEffect(() => {
     fetch('/api/team')
@@ -55,6 +56,16 @@ export default function InboxPage() {
   }, []);
 
   const canReview = user?.role === 'OWNER' || user?.role === 'MANAGER';
+  useEffect(() => {
+    fetch('/api/reminders')
+      .then((res) => (res.ok ? res.json() : { reminders: [] }))
+      .then((json) => {
+        const rows = (json as { reminders: { scheduledAt: string; status: string }[] }).reminders ?? [];
+        const now = Date.now();
+        setDueReminders(rows.filter((r) => (r.status === 'SCHEDULED' || r.status === 'SNOOZED') && new Date(r.scheduledAt).getTime() <= now).length);
+      })
+      .catch(() => {});
+  }, [conversations.length]);
   useEffect(() => {
     if (!canReview) return;
     fetch('/api/approvals')
@@ -106,6 +117,7 @@ export default function InboxPage() {
         isOpen={isMobileMenuOpen}
         onClose={closeMobileMenu}
         totalCount={conversations.length}
+        reminderCount={dueReminders}
         active="inbox"
         userName={user?.name ?? 'Business Paddy'}
         userSub={user ? `${roleLabel(user.role)} · ${user.workspaceName}` : 'Shared inbox'}

@@ -97,6 +97,29 @@ export function ConversationThread({
   const [macroMsg, setMacroMsg] = useState('');
   const [aiMsg, setAiMsg] = useState('');
   const [aiBusy, setAiBusy] = useState(false);
+  const [linked, setLinked] = useState<{ id: string; title: string; scheduledAt: string; status: string }[]>([]);
+  const [followUpOpen, setFollowUpOpen] = useState(false);
+  const [followUpTitle, setFollowUpTitle] = useState('');
+  const [followUpWhen, setFollowUpWhen] = useState('');
+  const [followUpMsg, setFollowUpMsg] = useState('');
+
+  useEffect(() => {
+    setLinked([]);
+    setFollowUpOpen(false);
+    setFollowUpMsg('');
+    if (!conversation) return;
+    setFollowUpTitle(`Follow up with ${conversation.name}`);
+    fetch(`/api/reminders?conversationId=${encodeURIComponent(conversation.id)}`)
+      .then((res) => (res.ok ? res.json() : { reminders: [] }))
+      .then((data) =>
+        setLinked(
+          ((data as { reminders: { id: string; title: string; scheduledAt: string; status: string }[] }).reminders ?? []).filter(
+            (r) => r.status === 'SCHEDULED' || r.status === 'SNOOZED',
+          ),
+        ),
+      )
+      .catch(() => {});
+  }, [conversation?.id]);
 
   useEffect(() => {
     fetch('/api/saved-replies')
@@ -137,6 +160,33 @@ export function ConversationThread({
       setAiMsg(err instanceof Error ? err.message : 'Draft failed.');
     }
     setAiBusy(false);
+  }
+
+  async function createFollowUp() {
+    if (!conversation || !followUpTitle.trim() || !followUpWhen) {
+      setFollowUpMsg('A title and date are required.');
+      return;
+    }
+    setFollowUpMsg('');
+    try {
+      const res = await fetch('/api/reminders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: followUpTitle.trim(),
+          conversationId: conversation.id,
+          scheduledAt: new Date(followUpWhen).toISOString(),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
+      });
+      const json = (await res.json()) as { reminder?: { id: string; title: string; scheduledAt: string; status: string }; error?: string };
+      if (!res.ok || !json.reminder) throw new Error(json.error || 'Could not create.');
+      setLinked((prev) => [...prev, json.reminder as { id: string; title: string; scheduledAt: string; status: string }]);
+      setFollowUpOpen(false);
+      setFollowUpMsg('');
+    } catch (err) {
+      setFollowUpMsg(err instanceof Error ? err.message : 'Could not create.');
+    }
   }
   const [escalating, setEscalating] = useState(false);
   const [escManager, setEscManager] = useState('');
@@ -383,7 +433,38 @@ export function ConversationThread({
                 Escalate
               </button>
             ) : null}
+            <button className="chip" type="button" onClick={() => setFollowUpOpen((v) => !v)}>
+              Follow up
+            </button>
           </div>
+          {linked.length > 0 ? (
+            <div className="assignee" style={{ marginTop: '6px' }}>
+              ⏰ {linked.map((r) => `${r.title} (${new Date(r.scheduledAt).toLocaleString()})`).join(' · ')} — staff only, see Reminders.
+            </div>
+          ) : null}
+          {followUpOpen ? (
+            <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <input
+                aria-label="Reminder title"
+                value={followUpTitle}
+                onChange={(e) => setFollowUpTitle(e.target.value)}
+                placeholder="Reminder title"
+                maxLength={120}
+                style={{ border: '1px solid var(--line)', borderRadius: '999px', padding: '5px 10px', fontSize: '0.75rem', background: 'var(--off-white)', color: 'var(--ink)' }}
+              />
+              <input
+                aria-label="Follow-up date and time"
+                type="datetime-local"
+                value={followUpWhen}
+                onChange={(e) => setFollowUpWhen(e.target.value)}
+                style={{ border: '1px solid var(--line)', borderRadius: '999px', padding: '5px 10px', fontSize: '0.75rem', background: 'var(--off-white)', color: 'var(--ink)' }}
+              />
+              <button className="chip" type="button" onClick={createFollowUp}>
+                Set reminder
+              </button>
+              {followUpMsg ? <span className="assignee">{followUpMsg}</span> : null}
+            </div>
+          ) : null}
           {escalating ? (
             <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
               <select

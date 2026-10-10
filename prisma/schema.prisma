@@ -236,6 +236,8 @@ model Reminder {
   title          String
   assignedToId   String?
   assignedTo     User?          @relation("ReminderAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  // Creator tracking for visibility (assignee + creator + managers/owners).
+  createdById    String?
   scheduledAt    DateTime
   timezone       String?
   frequency      String?

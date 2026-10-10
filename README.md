@@ -181,6 +181,7 @@ success message plus the recorded payment row.
 | 3 | 🟡 Saved replies + macros (built + tested, uncommitted): approved replies with composer insert; one-click macros insert text and run assign/status/escalate; owner/manager manage, all roles use |
 | 3 | 🟡 AI drafts + tone + auto-replies + approvals (built + tested 18/18, uncommitted): mock AI draft with review-before-send, tone guidance, owner opt-in Paddy Chat greeting, approval queue with trainee/NEEDS_APPROVAL enforcement; APIs `/api/ai-draft`, `/api/reply-settings`, `/api/approvals` |
 | 4 | Customer Intelligence, Cross-Channel & Branding |
+| 4 | 🟡 Internal reminders (built + tested 20/20, uncommitted): create/assign/schedule/snooze/reschedule/complete/cancel with timezone + frequency, staff-only visibility (assignee/creator/managers), central Reminders page with overdue badge, per-thread follow-up that moves conversations to Follow up; APIs `/api/reminders`; recurrence auto-creation not yet built |
 | 5 | Reporting, Performance & Payments (Paystack) |
 | 6 | Channel Connections, Ownership Handover, Ethics & Polish |
 
