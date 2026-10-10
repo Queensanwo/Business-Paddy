@@ -91,6 +91,7 @@ model Workspace {
   channels     ChannelAccount[]
   payments     Payment[]
   invitations  StaffInvitation[]
+  ownershipTransfers OwnershipTransfer[]
   savedReplies SavedReply[]
   macros       Macro[]
   approvals    ApprovalRequest[]
@@ -304,6 +305,23 @@ model StaffInvitation {
   createdAt   DateTime  @default(now())
 
   @@index([workspaceId, email])
+}
+
+// Ownership handover (Phase 6a): secure single-use expiring invitation from
+// the current owner to the incoming owner. Hashed token, atomic swap.
+model OwnershipTransfer {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  initiatedById  String?
+  recipientEmail String
+  tokenHash      String    @unique
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([workspaceId])
 }
 
 // Owner-approved macros: insert text plus run actions (FR20).

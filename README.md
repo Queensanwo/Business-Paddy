@@ -194,6 +194,7 @@ success message plus the recorded payment row.
 | 5 | Reporting, Performance & Payments (Paystack) |
 | 5 | 🟡 Reports + feedback (built + tested 16/16, uncommitted): `/reports` page in plain language (received/answered/response rate/first-reply speed/resolved/overdue/happiness/escalations with reasons), per-person table + filter for managers, human-replies-only definitions; guest Helpful/Not helpful + comment after resolved chats with business on/off switch; APIs `/api/reports/summary`, guest feedback endpoint; owner reply-rating (FR31) and live Paystack test still pending |
 | 6 | Channel Connections, Ownership Handover, Ethics & Polish |
+| 6 | 🟡 Ownership handover (built + tested 20/20, uncommitted): owner initiates with password re-auth, expiring single-use link (72h, emailed when configured, forwardable otherwise), recipient sign-in + explicit accept, atomic single-owner swap with ex-owner to manager, cancel/supersede/expiry, audit trail; cross-workspace transfers + connected-account moves still pending |
 
 ## Deployment (Future)
 
