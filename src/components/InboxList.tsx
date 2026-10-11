@@ -11,9 +11,10 @@ interface InboxListProps {
   selectedId: string;
   onFilterChange: (filter: InboxFilter) => void;
   onConversationClick: (id: string) => void;
+  demoMode?: boolean;
 }
 
-export function InboxList({ conversations, unansweredIds, filter, selectedId, onFilterChange, onConversationClick }: InboxListProps) {
+export function InboxList({ conversations, unansweredIds, filter, selectedId, onFilterChange, onConversationClick, demoMode }: InboxListProps) {
   const filteredConversations = conversations.filter((c) => {
     if (filter === 'all') return true;
     if (filter === 'unanswered') return unansweredIds.has(c.id);
@@ -23,7 +24,7 @@ export function InboxList({ conversations, unansweredIds, filter, selectedId, on
   return (
     <section className="inbox" id="inbox">
       <div className="inbox-head">
-        <h2>All conversations <span className="status">Demo data</span></h2>
+        <h2>All conversations{demoMode ? <span className="status">Demo — no real messages are sent</span> : null}</h2>
         <p>WhatsApp, Instagram, TikTok, email, Paddy Chat and Facebook in one place</p>
         <div className="filters" id="filters">
           <Chip data-filter="all" active={filter === 'all'} onClick={() => onFilterChange('all')}>All</Chip>

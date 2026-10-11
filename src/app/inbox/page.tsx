@@ -130,13 +130,14 @@ export default function InboxPage() {
         selectedId={selectedId}
         onFilterChange={setFilter}
         onConversationClick={selectConversation}
+        demoMode={user?.workspaceMode === 'DEMO'}
       />
       <section className="main">
         <header className="topbar">
           <button className="menu-btn" id="menuBtn" type="button" onClick={toggleMobileMenu}>Menu</button>
           <div>
             <strong>Owner performance</strong>
-            <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>Today · Lagos Market Hub</div>
+            <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>Today · {user?.workspaceName ?? 'Business Paddy'}</div>
           </div>
           <button className="chip" id="backBtn" type="button" onClick={goBackToList}>Inbox list</button>
           <button className="chip" type="button" onClick={signOut}>Sign out</button>

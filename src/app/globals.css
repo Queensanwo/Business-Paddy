@@ -221,6 +221,26 @@ a.menu-row:focus-visible {
   background: #fff;
 }
 
+/* Abstract landing illustration (no fictional data). */
+.lp-shot-abstract {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  padding: 26px 22px;
+}
+
+.lp-shot-points {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.lp-shot-points li::before {
+  content: "✓ ";
+}
+
 /* ---------- Public landing page ---------- */
 .lp {
   background: #fff;

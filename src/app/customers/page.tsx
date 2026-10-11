@@ -189,7 +189,7 @@ export default function CustomersPage() {
       />
       <section className="inbox" id="inbox">
         <div className="inbox-head">
-          <h2>Customers <span className="status">Demo data</span></h2>
+          <h2>Customers{user?.workspaceMode === 'DEMO' ? <span className="status">Demo — no real messages are sent</span> : null}</h2>
           <p>Combined histories across every connected channel</p>
         </div>
         <div className="conv-list" id="convList">

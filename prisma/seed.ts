@@ -3,6 +3,14 @@ import { auth } from '../src/server/auth';
 
 const prisma = new PrismaClient();
 
+// Safety: demo seed data must never touch a hosted database. Production
+// databases start empty via migrations; seed only a local database.
+const dbUrl = process.env.DATABASE_URL ?? '';
+if (!/localhost|127\.0\.0\.1/.test(dbUrl)) {
+  console.error('Refusing to seed a non-local database.');
+  process.exit(1);
+}
+
 // Demo-only credentials (documented in README, never for real data).
 const OWNER_EMAIL = 'owner@example.com';
 const OWNER_PASSWORD = 'demo-owner-123';
