@@ -193,6 +193,27 @@ reported, not hidden), delivery statuses ignored, one shared test number per
 server. Tested 24/24 (18 webhook/unit + 6 fallback); live send/receive with real
 credentials still pending the owner's keys.
 
+## Email mailboxes via Google (OAuth — client keys required to connect)
+
+Each business connects its own Gmail mailbox by tapping Connect (owner/manager
+only) and approving read + send scopes in Google's popup — mailbox passwords are
+never asked for or stored. Tokens are AES-256-GCM encrypted per workspace and
+deleted on disconnect; history stays. Inbox replies send threaded through Gmail
+with the provider ID stored; "Check mail now" polls recent mail into the inbox
+(a few minutes of delay is normal with polling; duplicates skipped by Gmail ID).
+
+```bash
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+```
+
+The redirect URI is your app URL + `/api/channels/google/callback` — paste it
+exactly into the Google console OAuth client (local:
+`http://localhost:3000/api/channels/google/callback`; production: your Netlify
+URL + `/api/channels/google/callback`). Without the keys, Connect
+shows setup guidance and replies save locally. Tested 18/18 (9 vault/state unit
++ 9 guards); live Gmail connect/send/poll still pending the owner's keys.
+
 ## Roadmap (Planned)
 
 | Phase | Focus |

@@ -92,6 +92,7 @@ model Workspace {
   payments     Payment[]
   invitations  StaffInvitation[]
   ownershipTransfers OwnershipTransfer[]
+  emailAccounts EmailAccount[]
   savedReplies SavedReply[]
   macros       Macro[]
   approvals    ApprovalRequest[]
@@ -316,11 +317,30 @@ model OwnershipTransfer {
   initiatedById  String?
   recipientEmail String
   tokenHash      String    @unique
-  expiresAt      DateTime
-  acceptedAt     DateTime?
-  cancelledAt    DateTime?
-  createdAt      DateTime  @default(now())
+  expiresAt     DateTime
+  acceptedAt    DateTime?
+  cancelledAt   DateTime?
+  createdAt     DateTime  @default(now())
 
+  @@index([workspaceId])
+}
+
+// Connected email accounts (Phase 6b): one row per mailbox per workspace.
+// Tokens are AES-256-GCM encrypted; the server never stores mailbox passwords.
+model EmailAccount {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  provider        String    @default("GOOGLE")
+  emailAddress    String
+  refreshTokenEnc String
+  accessTokenEnc  String?
+  accessExpiresAt DateTime?
+  lastHistoryId   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([workspaceId, emailAddress])
   @@index([workspaceId])
 }
 

@@ -71,7 +71,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
         },
       }),
     ]);
-    // Best-effort WhatsApp send; the approval stands regardless.
+    // Best-effort channel sends; the approval stands regardless.
     let delivery = { attempted: false, sent: false } as import('@/server/whatsapp').ChannelDelivery;
     try {
       const { tryChannelSend } = await import('@/server/whatsapp');
@@ -81,6 +81,15 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
         messageId: created.id,
         text: row.text,
       });
+      if (!delivery.attempted) {
+        const { tryEmailSend } = await import('@/server/gmail');
+        delivery = await tryEmailSend({
+          workspaceId: staff.workspaceId,
+          conversationId: conv.id,
+          messageId: created.id,
+          text: row.text,
+        });
+      }
     } catch (e) {
       console.error('channel send failed', e);
       delivery = { attempted: true, sent: false, error: 'Channel send failed.' };

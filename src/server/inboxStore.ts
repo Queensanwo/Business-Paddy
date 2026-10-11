@@ -491,12 +491,16 @@ export async function saveReply(
 
   await notifyGuestReply(conversationId);
 
-  // Best-effort WhatsApp send for WhatsApp threads. The local message stands
-  // regardless; delivery reports what happened on the channel.
+  // Best-effort channel sends (WhatsApp, then email). The local message
+  // stands regardless; delivery reports what happened on the channel.
   let delivery: ChannelDelivery = { attempted: false, sent: false };
   try {
     const { tryChannelSend } = await import('@/server/whatsapp');
     delivery = await tryChannelSend({ workspaceId, conversationId, messageId: created.id, text: trimmed });
+    if (!delivery.attempted) {
+      const { tryEmailSend } = await import('@/server/gmail');
+      delivery = await tryEmailSend({ workspaceId, conversationId, messageId: created.id, text: trimmed });
+    }
   } catch (e) {
     console.error('channel send failed', e);
     delivery = { attempted: true, sent: false, error: 'Channel send failed.' };
