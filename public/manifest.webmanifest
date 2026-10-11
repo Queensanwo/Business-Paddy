@@ -1,0 +1,16 @@
+{
+  "name": "Business Paddy — Shared Inbox",
+  "short_name": "Business Paddy",
+  "description": "One place to receive and answer customer conversations from WhatsApp, Instagram, TikTok, email and website.",
+  "start_url": "/inbox",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fafafa",
+  "theme_color": "#123a8a",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
