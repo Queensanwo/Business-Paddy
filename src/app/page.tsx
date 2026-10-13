@@ -17,27 +17,70 @@ function Logo() {
   );
 }
 
+const PREVIEW_CONVERSATIONS = [
+  { initials: 'SM', name: 'Sarah Mitchell', time: '10:24', preview: 'Hi, do you have this in stock?', channel: 'Website' },
+  { initials: 'JC', name: 'James Carter', time: '09:41', preview: 'Thanks for your help!', channel: 'Instagram' },
+  { initials: 'PS', name: 'Priya Sharma', time: '08:17', preview: 'Can I change my order?', channel: 'WhatsApp' },
+  { initials: 'DL', name: 'Daniel Lee', time: 'Yesterday', preview: 'What are your opening hours?', channel: 'Email' },
+  { initials: 'EW', name: 'Emma Wilson', time: 'Yesterday', preview: 'Do you offer gift wrapping?', channel: 'TikTok' },
+];
+
 function ProductPreview() {
-  // Abstract product illustration — no names, numbers, or conversations.
-  // Nothing here is presented as real product data.
   return (
-    <div className="lp-shot" aria-label="Product illustration">
-      <span className="lp-shot-tag">How it feels</span>
-      <div className="lp-shot-abstract">
-        <svg width="120" height="120" viewBox="0 0 34 34" aria-hidden="true">
-          <path
-            d="M17 3C9.3 3 3 8.6 3 15.5c0 3.9 2 7.4 5.1 9.6L6.5 31l6.6-2.9c1.2.3 2.5.4 3.9.4 7.7 0 14-5.6 14-12.5S24.7 3 17 3z"
-            fill="#1d4fb8"
-          />
-          <circle cx="11.5" cy="15.5" r="1.7" fill="#fff" />
-          <circle cx="17" cy="15.5" r="1.7" fill="#fff" />
-          <circle cx="22.5" cy="15.5" r="1.7" fill="#fff" />
-        </svg>
-        <ul className="lp-shot-points">
-          <li>One shared inbox for every channel</li>
-          <li>Clear ownership — nothing answered twice</li>
-          <li>Human review before anything sends</li>
-        </ul>
+    <div className="lp-shot" aria-label="Product preview (illustration with fictional data)">
+      <span className="lp-shot-tag">Product preview</span>
+      <div className="lp-shot-side">
+        <span className="lp-shot-brand">
+          <svg width="20" height="20" viewBox="0 0 34 34" aria-hidden="true">
+            <path
+              d="M17 3C9.3 3 3 8.6 3 15.5c0 3.9 2 7.4 5.1 9.6L6.5 31l6.6-2.9c1.2.3 2.5.4 3.9.4 7.7 0 14-5.6 14-12.5S24.7 3 17 3z"
+              fill="#e8c56b"
+            />
+          </svg>
+          Business Paddy
+        </span>
+        {['Inbox', 'Customers', 'Reminders', 'Templates', 'Settings'].map((item, i) => (
+          <span key={item} className={i === 0 ? 'lp-shot-link active' : 'lp-shot-link'}>
+            {item}
+          </span>
+        ))}
+      </div>
+      <div className="lp-shot-main">
+        <div className="lp-shot-top">
+          <strong>Inbox</strong>
+          <span className="lp-shot-search">Search conversations…</span>
+        </div>
+        <div className="lp-shot-tabs">
+          {['All', 'WhatsApp', 'Instagram', 'Email', 'TikTok', 'Website'].map((t, i) => (
+            <span key={t} className={i === 0 ? 'on' : ''}>{t}</span>
+          ))}
+        </div>
+        <div className="lp-shot-cards">
+          <div className="lp-shot-card"><span>Received</span><strong>24</strong></div>
+          <div className="lp-shot-card good"><span>Answered</span><strong>18</strong></div>
+          <div className="lp-shot-card warn"><span>Unanswered</span><strong>6</strong></div>
+        </div>
+        <div className="lp-shot-cols">
+          <div className="lp-shot-list">
+            {PREVIEW_CONVERSATIONS.map((c) => (
+              <div key={c.name} className="lp-shot-row">
+                <span className="lp-shot-avatar">{c.initials}</span>
+                <span className="lp-shot-rowtext">
+                  <strong>{c.name} <em>{c.time}</em></strong>
+                  <span>{c.preview}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="lp-shot-thread">
+            <strong>Sarah Mitchell</strong>
+            <div className="lp-bubble in">Hi, do you have this in stock?</div>
+            <div className="lp-bubble out">Yes, it&apos;s in stock! Would you like me to reserve one for you?</div>
+            <div className="lp-bubble in">That would be great, thank you!</div>
+            <span className="lp-shot-composer">Type a message…</span>
+          </div>
+        </div>
+        <p className="lp-shot-note">Illustration with fictional data.</p>
       </div>
     </div>
   );
@@ -109,7 +152,7 @@ export default function LandingPage() {
 
       <footer className="lp-foot">
         <Logo />
-        <p>© Business Paddy</p>
+        <p>© Business Paddy · Screenshots on this page are illustrations with fictional data.</p>
       </footer>
     </div>
   );
