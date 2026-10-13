@@ -7,9 +7,13 @@ on:
       - 'android/**'
       - '.github/workflows/apk.yml'
 
+permissions:
+  contents: read
+
 jobs:
   apk:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -19,18 +23,19 @@ jobs:
           java-version: '17'
 
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0'
+          log-accepted-android-sdk-licenses: false
 
-      - name: Install Android packages
-        run: |
-          yes | sdkmanager --licenses > /dev/null
-          sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
-
-      - uses: gradle/actions/setup-gradle@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
 
       - name: Assemble debug APK
-        run: gradle assembleDebug -p android --no-daemon
+        run: gradle assembleDebug -p android --no-daemon --stacktrace
 
       - uses: actions/upload-artifact@v4
         with:
           name: business-paddy-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
