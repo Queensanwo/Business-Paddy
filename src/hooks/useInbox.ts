@@ -112,10 +112,10 @@ export function useInbox(): UseInboxReturn {
             delivery?: { attempted?: boolean; sent?: boolean; error?: string };
           };
           setInbox(toState(json));
-          // Surface channel delivery for connected threads (WhatsApp, email);
-          // other channels are local-only and need no notice.
+          // Surface channel delivery for connected threads (WhatsApp, email,
+          // Messenger, Instagram); other channels are local-only.
           const ch = inbox.conversations.find((c) => c.id === selectedId)?.channel;
-          if ((ch === 'whatsapp' || ch === 'email') && json.delivery) {
+          if ((ch === 'whatsapp' || ch === 'email' || ch === 'facebook' || ch === 'instagram') && json.delivery) {
             if (json.delivery.sent) setDeliveryNotice('Saved and sent.');
             else if (json.delivery.attempted) setDeliveryNotice(`Saved locally. Not sent: ${json.delivery.error ?? 'unknown error'}`);
             else setDeliveryNotice('Saved locally. No channel connected for this business.');

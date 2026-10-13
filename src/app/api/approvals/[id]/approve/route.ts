@@ -90,6 +90,15 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
           text: row.text,
         });
       }
+      if (!delivery.attempted) {
+        const { tryMetaSend } = await import('@/server/meta');
+        delivery = await tryMetaSend({
+          workspaceId: staff.workspaceId,
+          conversationId: conv.id,
+          messageId: created.id,
+          text: row.text,
+        });
+      }
     } catch (e) {
       console.error('channel send failed', e);
       delivery = { attempted: true, sent: false, error: 'Channel send failed.' };

@@ -93,6 +93,7 @@ model Workspace {
   invitations  StaffInvitation[]
   ownershipTransfers OwnershipTransfer[]
   emailAccounts EmailAccount[]
+  messengerPages MessengerPage[]
   savedReplies SavedReply[]
   macros       Macro[]
   approvals    ApprovalRequest[]
@@ -342,6 +343,24 @@ model EmailAccount {
 
   @@unique([workspaceId, emailAddress])
   @@index([workspaceId])
+}
+
+// Connected Meta pages (Messenger + Instagram DMs, Phase 6c): one row per
+// Facebook Page per workspace. The Page token is AES-256-GCM encrypted and
+// sends/receives on behalf of the linked page (and its Instagram account).
+model MessengerPage {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  pageId         String
+  pageName       String?
+  instagramId    String?
+  tokenEnc       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([workspaceId, pageId])
+  @@index([pageId])
 }
 
 // Owner-approved macros: insert text plus run actions (FR20).
