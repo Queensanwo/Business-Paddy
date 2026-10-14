@@ -20,3 +20,6 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # Public application origin, intentionally present in links and build output.
+  # Keep secret scanning enabled for authentication secrets and provider tokens.
+  SECRETS_SCAN_OMIT_KEYS = "BETTER_AUTH_URL"
