@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 
 import { Conversation, channelLabel, InboxFilter } from '@/types/conversation';
 import { Chip } from '@/components/UI/Chip';
@@ -12,9 +13,25 @@ interface InboxListProps {
   onFilterChange: (filter: InboxFilter) => void;
   onConversationClick: (id: string) => void;
   demoMode?: boolean;
+  onOpenMenu?: () => void;
 }
 
-export function InboxList({ conversations, unansweredIds, filter, selectedId, onFilterChange, onConversationClick, demoMode }: InboxListProps) {
+export function InboxList({ conversations, unansweredIds, filter, selectedId, onFilterChange, onConversationClick, demoMode, onOpenMenu }: InboxListProps) {
+  const [demoBusy, setDemoBusy] = useState(false);
+  const [demoError, setDemoError] = useState('');
+  async function loadSamples() {
+    setDemoBusy(true);
+    setDemoError('');
+    try {
+      const response = await fetch('/api/inbox/demo', { method: 'POST' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not load sample conversations.');
+      window.location.reload();
+    } catch (error) {
+      setDemoError(error instanceof Error ? error.message : 'Could not load samples.');
+      setDemoBusy(false);
+    }
+  }
   const filteredConversations = conversations.filter((c) => {
     if (filter === 'all') return true;
     if (filter === 'unanswered') return unansweredIds.has(c.id);
@@ -24,6 +41,7 @@ export function InboxList({ conversations, unansweredIds, filter, selectedId, on
   return (
     <section className="inbox" id="inbox">
       <div className="inbox-head">
+        <button className="menu-btn" type="button" onClick={onOpenMenu} aria-label="Open navigation for Team, Settings and Workspace" aria-controls="nav">Menu</button>
         <h2>All conversations{demoMode ? <span className="status">Demo — no real messages are sent</span> : null}</h2>
         <p>WhatsApp, Instagram, TikTok, email, Paddy Chat and Facebook in one place</p>
         <div className="filters" id="filters">
@@ -38,6 +56,19 @@ export function InboxList({ conversations, unansweredIds, filter, selectedId, on
         </div>
       </div>
       <div className="conv-list" id="convList">
+        {filteredConversations.length === 0 ? (
+          <div style={{ padding: '24px 16px', color: 'var(--muted)' }} role="status">
+            <strong>No conversations here yet</strong>
+            <p>{filter === 'all' ? 'Open Menu to find your Team, Settings and channel connections.' : 'Try another channel or select All to see your conversations.'}</p>
+            {demoMode && conversations.length === 0 ? (
+              <div style={{ marginTop: '12px' }}>
+                <button className="chip" type="button" onClick={loadSamples} disabled={demoBusy}>{demoBusy ? 'Loading samples…' : 'Load sample demo conversations'}</button>
+                <p>Fictional customers for your presentation. No accounts are connected.</p>
+                {demoError ? <p role="alert">{demoError}</p> : null}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         {filteredConversations.map(c => (
           <button
             key={c.id}

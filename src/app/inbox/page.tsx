@@ -77,11 +77,19 @@ export default function InboxPage() {
 
   const answered = conversations.length - unansweredIds.size;
   const canAssignOthers = user?.role === 'OWNER' || user?.role === 'MANAGER';
+  const navigation = (
+    <Navigation isOpen={isMobileMenuOpen} onClose={closeMobileMenu}
+      totalCount={conversations.length} reminderCount={dueReminders} active="inbox"
+      userName={user?.name ?? 'Business Paddy'}
+      userSub={user ? `${roleLabel(user.role)} · ${user.workspaceName}` : 'Shared inbox'} />
+  );
 
   if (loadState === 'loading') {
     return (
-      <div className="app" id="app">
+      <div className="app app-single" id="app">
+        {navigation}
         <section className="main">
+          <header className="topbar"><button className="menu-btn" type="button" onClick={toggleMobileMenu}>Menu</button><a href="/settings">Settings</a><a href="/team">Team</a></header>
           <div className="thread-wrap">
             <div className="thread-head">
               <div>
@@ -97,13 +105,16 @@ export default function InboxPage() {
 
   if (loadState === 'error') {
     return (
-      <div className="app" id="app">
+      <div className="app app-single" id="app">
+        {navigation}
         <section className="main">
+          <header className="topbar"><button className="menu-btn" type="button" onClick={toggleMobileMenu}>Menu</button><a href="/settings">Settings</a><a href="/team">Team</a></header>
           <div className="thread-wrap">
             <div className="thread-head">
               <div>
                 <h3>Inbox unavailable</h3>
                 <div className="assignee">{loadError}</div>
+                <p><a href="/settings">Open Settings</a> · <a href="/team">Open Team</a></p>
               </div>
             </div>
           </div>
@@ -131,6 +142,7 @@ export default function InboxPage() {
         onFilterChange={setFilter}
         onConversationClick={selectConversation}
         demoMode={user?.workspaceMode === 'DEMO'}
+        onOpenMenu={toggleMobileMenu}
       />
       <section className="main">
         <header className="topbar">
