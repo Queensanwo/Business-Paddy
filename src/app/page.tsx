@@ -152,7 +152,17 @@ export default function LandingPage() {
 
       <footer className="lp-foot">
         <Logo />
-        <p>© Business Paddy · Screenshots on this page are illustrations with fictional data.</p>
+        <div>
+          <p>Business Paddy is a product of Ohevlishon Enterprise.</p>
+          <p>Support: <a href="mailto:businesspaddysupport@gmail.com">businesspaddysupport@gmail.com</a></p>
+          <nav aria-label="Business information" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+            <Link href="/contact">About and contact</Link>
+            <Link href="/privacy">Privacy notice</Link>
+            <Link href="/terms">Terms of use</Link>
+            <Link href="/data-deletion">Data deletion requests</Link>
+          </nav>
+          <p>© Ohevlishon Enterprise · Product preview uses fictional data.</p>
+        </div>
       </footer>
     </div>
   );
