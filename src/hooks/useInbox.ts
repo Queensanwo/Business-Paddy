@@ -74,6 +74,11 @@ export function useInbox(): UseInboxReturn {
     fetchInbox()
       .then((state) => {
         setInbox(state);
+        const requestedId = new URLSearchParams(window.location.search).get('conversationId');
+        const requested = state.conversations.find((c) => c.id === requestedId);
+        setSelectedId(requested?.id ?? state.conversations[0]?.id ?? '');
+        if (requested) setIsListMode(false);
+        else if (requestedId) setDeliveryNotice('That conversation is not available in this workspace.');
         setLoadState('ready');
       })
       .catch(() => {
@@ -112,8 +117,7 @@ export function useInbox(): UseInboxReturn {
             delivery?: { attempted?: boolean; sent?: boolean; error?: string };
           };
           setInbox(toState(json));
-          // Surface channel delivery for connected threads (WhatsApp, email,
-          // Messenger, Instagram); other channels are local-only.
+          // Surface delivery for every connected external messaging channel.
           const ch = inbox.conversations.find((c) => c.id === selectedId)?.channel;
           if ((ch === 'whatsapp' || ch === 'email' || ch === 'facebook' || ch === 'instagram') && json.delivery) {
             if (json.delivery.sent) setDeliveryNotice('Saved and sent.');
