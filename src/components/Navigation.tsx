@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSessionUser } from '@/hooks/useSessionUser';
 
-export type NavSection = 'inbox' | 'customers' | 'team' | 'settings' | 'workspace' | 'reminders' | 'reports';
+export type NavSection = 'inbox' | 'customers' | 'team' | 'settings' | 'workspace' | 'reminders' | 'reports' | 'owner';
 
 interface NavigationProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export function Navigation({
   userName = 'Business Paddy',
   userSub = 'Shared inbox',
 }: NavigationProps) {
+  const { user } = useSessionUser();
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -69,6 +71,7 @@ export function Navigation({
           </div>
         </div>
         <nav className="nav-links">
+          {user?.role === 'OWNER' && <a className={active === 'owner' ? 'active' : ''} href="/owner">Owner overview</a>}
           <a className={active === 'inbox' ? 'active' : ''} href="/inbox">Inbox{totalCount > 0 ? <span className="count">{totalCount}</span> : null}</a>
           <a className={active === 'customers' ? 'active' : ''} href="/customers">Customers</a>
           <a className={active === 'reminders' ? 'active' : ''} href="/reminders">Reminders{reminderCount > 0 ? <span className="count">{reminderCount}</span> : null}</a>

@@ -74,6 +74,11 @@ export function useInbox(): UseInboxReturn {
     fetchInbox()
       .then((state) => {
         setInbox(state);
+        const requestedId = new URLSearchParams(window.location.search).get('conversationId');
+        const requested = state.conversations.find((c) => c.id === requestedId);
+        setSelectedId(requested?.id ?? state.conversations[0]?.id ?? '');
+        if (requested) setIsListMode(false);
+        else if (requestedId) setDeliveryNotice('That conversation is not available in this workspace.');
         setLoadState('ready');
       })
       .catch(() => {
