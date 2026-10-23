@@ -138,9 +138,10 @@ export default function LandingPage() {
         <section className="lp-how" id="how">
           <h2>How it works</h2>
           <ol>
-            <li><strong>1. Create your workspace.</strong> Sign up in minutes with just your business name.</li>
-            <li><strong>2. Answer from one inbox.</strong> Read and reply to every conversation in a single familiar view.</li>
-            <li><strong>3. Follow up and track.</strong> Claim, assign, resolve and review how each customer was helped.</li>
+            <li><strong>Create your workspace.</strong> Create a Business Paddy account and add your business details.</li>
+            <li><strong>Connect your business accounts.</strong> Add and authorize your own messaging or email accounts in Settings. Real messages require a supported, approved connection.</li>
+            <li><strong>Answer from one inbox.</strong> Read and reply to conversations from your connected accounts in one place.</li>
+            <li><strong>Follow up and track.</strong> Claim, assign, resolve and review how each customer was helped.</li>
           </ol>
         </section>
 
