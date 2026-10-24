@@ -2,17 +2,14 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { Resend } from 'resend';
 import { prisma } from '@/lib/db';
+import { authTrustedOrigins } from '@/server/authOrigins';
 
 // Server-only: never import this module (or @/lib/db) from client components.
 // Secrets come from .env (BETTER_AUTH_SECRET, BETTER_AUTH_URL).
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: 'postgresql' }),
   baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
-  trustedOrigins: [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
-  ],
+  trustedOrigins: authTrustedOrigins(),
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
