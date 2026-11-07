@@ -23,6 +23,11 @@ export function whatsappConfig(): WhatsAppConfig | null {
   return { token, phoneNumberId, businessAccountId, verifyToken, appSecret };
 }
 
+export function whatsappTestConfigForWorkspace(workspaceId: string): WhatsAppConfig | null {
+  const allowed = process.env.WHATSAPP_TEST_WORKSPACE_ID?.trim();
+  return allowed && workspaceId === allowed ? whatsappConfig() : null;
+}
+
 /** Last-4 masking for UI display. Never exposes full values. */
 export function maskId(value: string): string {
   return value.length <= 4 ? '••••' : `••••${value.slice(-4)}`;
@@ -96,8 +101,10 @@ export function parseWebhookPayload(payload: unknown): { phoneNumberId: string; 
 
 /** Routes an inbound number to exactly one workspace via its linked ChannelAccount. */
 export async function workspaceForNumber(phoneNumberId: string): Promise<{ workspaceId: string; channelAccountId: string } | null> {
+  const allowed = process.env.WHATSAPP_TEST_WORKSPACE_ID?.trim();
+  if (!allowed || whatsappTestConfigForWorkspace(allowed)?.phoneNumberId !== phoneNumberId) return null;
   const row = await prisma.channelAccount.findFirst({
-    where: { channel: 'WHATSAPP', providerAccountId: phoneNumberId },
+    where: { workspaceId: allowed, channel: 'WHATSAPP', providerAccountId: phoneNumberId, workspace: { mode: 'LIVE' } },
     select: { id: true, workspaceId: true },
   });
   if (!row) return null;
@@ -237,7 +244,7 @@ export async function tryChannelSend(args: {
     },
   });
   if (!conv || conv.channel !== 'WHATSAPP') return { attempted: false, sent: false };
-  const cfg = whatsappConfig();
+  const cfg = whatsappTestConfigForWorkspace(args.workspaceId);
   if (!cfg) return { attempted: false, sent: false, error: 'WhatsApp is not configured.' };
   const link = await prisma.channelAccount.findFirst({
     where: { workspaceId: args.workspaceId, channel: 'WHATSAPP', providerAccountId: cfg.phoneNumberId },

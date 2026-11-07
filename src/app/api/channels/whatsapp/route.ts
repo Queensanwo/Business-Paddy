@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { InboxApiError } from '@/server/inboxStore';
 import { requireStaff } from '@/server/requireStaff';
-import { whatsappConfig, maskId } from '@/server/whatsapp';
+import { whatsappTestConfigForWorkspace, maskId } from '@/server/whatsapp';
 
 function canManage(role: string): boolean {
   return role === 'OWNER' || role === 'MANAGER';
 }
 
 async function statusFor(workspaceId: string) {
-  const cfg = whatsappConfig();
+  const cfg = whatsappTestConfigForWorkspace(workspaceId);
   const link = await prisma.channelAccount.findFirst({
     where: { workspaceId, channel: 'WHATSAPP' },
     select: { id: true, providerAccountId: true, displayName: true, mirroringVerified: true },
@@ -46,10 +46,10 @@ export async function POST() {
     if (!canManage(staff.role)) {
       return NextResponse.json({ error: 'Only owners and managers can connect WhatsApp.' }, { status: 403 });
     }
-    const cfg = whatsappConfig();
+    const cfg = whatsappTestConfigForWorkspace(staff.workspaceId);
     if (!cfg) {
       return NextResponse.json(
-        { error: 'WhatsApp credentials are not set on the server. Add them to .env and restart.' },
+        { error: 'The WhatsApp test number is not available for this workspace.' },
         { status: 503 },
       );
     }
