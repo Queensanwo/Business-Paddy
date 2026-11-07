@@ -142,6 +142,7 @@ export default function InboxPage() {
         onFilterChange={setFilter}
         onConversationClick={selectConversation}
         demoMode={user?.workspaceMode === 'DEMO'}
+        canManageChannels={canReview}
         onOpenMenu={toggleMobileMenu}
       />
       <section className="main">

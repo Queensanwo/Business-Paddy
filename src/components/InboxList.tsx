@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 
 import { Conversation, channelLabel, InboxFilter } from '@/types/conversation';
 import { Chip } from '@/components/UI/Chip';
@@ -13,10 +14,11 @@ interface InboxListProps {
   onFilterChange: (filter: InboxFilter) => void;
   onConversationClick: (id: string) => void;
   demoMode?: boolean;
+  canManageChannels?: boolean;
   onOpenMenu?: () => void;
 }
 
-export function InboxList({ conversations, unansweredIds, filter, selectedId, onFilterChange, onConversationClick, demoMode, onOpenMenu }: InboxListProps) {
+export function InboxList({ conversations, unansweredIds, filter, selectedId, onFilterChange, onConversationClick, demoMode, canManageChannels, onOpenMenu }: InboxListProps) {
   const [demoBusy, setDemoBusy] = useState(false);
   const [demoError, setDemoError] = useState('');
   async function loadSamples() {
@@ -38,6 +40,8 @@ export function InboxList({ conversations, unansweredIds, filter, selectedId, on
     return c.channel === filter;
   });
 
+  const showWhatsAppSetup = canManageChannels && (filter === 'whatsapp' || filter === 'all') && !conversations.some((c) => c.channel === 'whatsapp');
+
   return (
     <section className="inbox" id="inbox">
       <div className="inbox-head">
@@ -56,6 +60,14 @@ export function InboxList({ conversations, unansweredIds, filter, selectedId, on
         </div>
       </div>
       <div className="conv-list" id="convList">
+        {showWhatsAppSetup ? (
+          <div style={{ padding: '16px' }}>
+            <Link href="/settings/whatsapp" className="chip">Connect WhatsApp</Link>
+            <p className="assignee" style={{ marginTop: '6px' }}>
+              {demoMode ? 'A Live workspace is required to receive real messages.' : 'Open WhatsApp setup to connect or check your number.'}
+            </p>
+          </div>
+        ) : null}
         {filteredConversations.length === 0 ? (
           <div style={{ padding: '24px 16px', color: 'var(--muted)' }} role="status">
             <strong>No conversations here yet</strong>
