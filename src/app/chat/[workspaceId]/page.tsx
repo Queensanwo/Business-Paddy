@@ -11,6 +11,8 @@ export default function GuestStartPage({ params }: { params: { workspaceId: stri
   const [busy, setBusy] = useState(false);
   const [returnLink, setReturnLink] = useState('');
   const [missing, setMissing] = useState(false);
+  const [serviceId, setServiceId] = useState<string | null>(null);
+  const [serviceName, setServiceName] = useState('');
 
   useEffect(() => {
     fetch(`/api/paddy-chat/business/${params.workspaceId}`)
@@ -22,6 +24,19 @@ export default function GuestStartPage({ params }: { params: { workspaceId: stri
       .catch(() => setMissing(true));
   }, [params.workspaceId]);
 
+  useEffect(() => {
+    const selected = new URLSearchParams(window.location.search).get('service');
+    setServiceId(selected);
+    setServiceName('');
+    if (!selected || selected.length !== 36) return;
+    const controller = new AbortController();
+    fetch(`/api/sites/${encodeURIComponent(params.workspaceId)}`, { signal: controller.signal })
+      .then(async (res) => res.ok ? res.json() : null)
+      .then((data) => setServiceName(data?.business?.profile?.services?.find((service: { id: string }) => service.id === selected)?.name || ''))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [params.workspaceId]);
+
   async function onStart(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -30,7 +45,7 @@ export default function GuestStartPage({ params }: { params: { workspaceId: stri
       const res = await fetch('/api/paddy-chat/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workspaceId: params.workspaceId, name, text }),
+        body: JSON.stringify({ workspaceId: params.workspaceId, name, text, serviceId: serviceId ?? undefined }),
       });
       const json = (await res.json()) as { token?: string; error?: string };
       if (!res.ok || !json.token) throw new Error(json.error || 'Could not start the chat.');
@@ -65,6 +80,9 @@ export default function GuestStartPage({ params }: { params: { workspaceId: stri
           </>
         ) : (
           <form onSubmit={onStart} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {serviceId && <p className="assignee">
+              {serviceName ? `Enquiry about: ${serviceName}` : 'Service enquiry'} · <a href={`/chat/${params.workspaceId}`}>Start a general chat instead</a>
+            </p>}
             <label className="auth-field">
               Your name
               <input required maxLength={60} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Adaeze" />

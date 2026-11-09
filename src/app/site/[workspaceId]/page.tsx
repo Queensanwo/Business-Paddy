@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { ProfessionalProfile, ProfileLink } from '@/lib/professionalProfile';
+import type { ProfessionalProfile } from '@/lib/professionalProfile';
+import { ProfessionalOverview } from '@/components/ProfessionalOverview';
 
 interface Business {
   id: string;
@@ -16,20 +17,6 @@ interface Business {
   chatUrl: string;
   professional: boolean;
   profile: ProfessionalProfile | null;
-}
-
-function PublicLinks({ title, entries }: { title: string; entries: ProfileLink[] }) {
-  if (entries.length === 0) return null;
-  return (
-    <section className="card received">
-      <h2 className="label">{title}</h2>
-      <ul style={{ paddingInlineStart: '20px', overflowWrap: 'anywhere' }}>
-        {entries.map(({ label, url }, index) => (
-          <li key={index} style={{ marginTop: '8px' }}><a href={url} target="_blank" rel="noopener noreferrer">{label}</a></li>
-        ))}
-      </ul>
-    </section>
-  );
 }
 
 export default function SitePage({ params }: { params: { workspaceId: string } }) {
@@ -75,6 +62,8 @@ export default function SitePage({ params }: { params: { workspaceId: string } }
     );
   }
 
+  if (biz.professional) return <ProfessionalOverview business={biz} />;
+
   return (
     <div className="site" id="site-shell" style={{ minHeight: '100vh', background: 'var(--off-white)', color: 'var(--ink)' }}>
       <main style={{ maxWidth: '640px', margin: '0 auto', padding: '48px 20px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -86,28 +75,20 @@ export default function SitePage({ params }: { params: { workspaceId: string } }
           )}
           <div>
             <h1 style={{ fontSize: '1.5rem', letterSpacing: '-0.02em' }}>{biz.name}</h1>
-            <p className="assignee">{biz.profile?.specialty || (biz.professional ? 'Professional profile' : 'Official page — chat with us below')}</p>
+            <p className="assignee">Official page — chat with us below</p>
           </div>
         </header>
-        {biz.professional && (
-          <a className="send" href={biz.chatUrl} style={{ textAlign: 'center', textDecoration: 'none', padding: '14px' }}>
-            Enquire on Paddy Chat
-          </a>
-        )}
         {biz.description ? (
           <section className="card received"><div className="label">About</div><p style={{ marginTop: '8px', whiteSpace: 'pre-wrap' }}>{biz.description}</p></section>
         ) : null}
         {biz.products ? (
           <section className="card received"><div className="label">Products &amp; services</div><p style={{ marginTop: '8px', whiteSpace: 'pre-wrap' }}>{biz.products}</p></section>
         ) : null}
-        {biz.profile && <PublicLinks title="Portfolio" entries={biz.profile.portfolio} />}
-        {biz.profile && <PublicLinks title="Social profiles" entries={biz.profile.socials} />}
-        {(biz.hours || biz.contact || biz.profile?.email) ? (
+        {(biz.hours || biz.contact) ? (
           <section className="card received">
             <div className="label">Visit or contact</div>
             {biz.hours ? <p style={{ marginTop: '8px', whiteSpace: 'pre-wrap' }}>🕒 {biz.hours}</p> : null}
             {biz.contact ? <p style={{ marginTop: '8px', whiteSpace: 'pre-wrap' }}>📞 {biz.contact}</p> : null}
-            {biz.profile?.email ? <p style={{ marginTop: '8px', overflowWrap: 'anywhere' }}><a href={`mailto:${biz.profile.email.replace(/\+/g, '%2B')}`}>{biz.profile.email}</a></p> : null}
           </section>
         ) : null}
         <a className="send" href={biz.chatUrl} style={{ textAlign: 'center', textDecoration: 'none', display: 'block', padding: '14px' }}>

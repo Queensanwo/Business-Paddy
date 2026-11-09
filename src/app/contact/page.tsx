@@ -5,6 +5,7 @@ export default function ContactPage() {
   return <PublicInfoLayout title="About and contact">
     <h2>Who we are</h2>
     <p>Ohevlishon Enterprise operates Business Paddy, a shared inbox application designed to help businesses organise customer conversations, collaborate with their teams and follow up with customers.</p>
+    <p>Business Paddy Professional helps independent professionals build a public page for their brand, services and portfolio. Visitors can ask about their work through Paddy Chat or request a reply if the professional enables the enquiry form.</p>
     <h2>Product availability</h2>
     <p>Business Paddy is under development. The landing-page preview uses fictional conversations. External messaging connections depend on provider authorization, configuration and approval; displaying a channel does not mean it is connected.</p>
     <h2>Get in touch</h2>

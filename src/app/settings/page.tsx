@@ -22,7 +22,7 @@ const GROUPS: MenuGroup[] = [
     items: [
       { href: '/settings/profile', icon: '🏢', name: 'Business profile', description: 'Name, industry and owner' },
       { href: '/settings/branding', icon: '🎨', name: 'Branding', description: 'Logo, themes and colours' },
-      { href: '/settings/website', icon: '🌐', name: 'Website page', description: 'The public page customers see' },
+      { href: '/settings/website', icon: '🌐', name: 'My website or portfolio', description: 'Edit, preview, and share the page customers see' },
     ],
   },
   {

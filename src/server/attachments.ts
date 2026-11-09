@@ -59,3 +59,20 @@ export function uploadPath(storageKey: string): string {
   }
   return join(UPLOAD_DIR, storageKey);
 }
+
+export function validateUploadContent(bytes: Buffer, mimeType: string): boolean {
+  const ascii = (start: number, end: number) => bytes.toString('ascii', start, end);
+  if (mimeType === 'image/png') return bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
+  if (mimeType === 'image/jpeg') return bytes.length >= 3 && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+  if (mimeType === 'image/gif') return ['GIF87a', 'GIF89a'].includes(ascii(0, 6));
+  if (mimeType === 'image/webp') return ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP';
+  if (mimeType === 'application/pdf') return ascii(0, 5) === '%PDF-';
+  if (mimeType === 'audio/wav') return ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WAVE';
+  if (mimeType === 'audio/webm') return bytes.subarray(0, 4).equals(Buffer.from([26,69,223,163]));
+  if (mimeType === 'audio/mp4' || mimeType === 'audio/x-m4a') return ascii(4, 8) === 'ftyp';
+  if (mimeType === 'audio/mpeg') return ascii(0, 3) === 'ID3' || (bytes.length > 1 && bytes[0] === 255 && (bytes[1] & 224) === 224);
+  if (mimeType === 'text/plain') {
+    try { new TextDecoder('utf-8', { fatal: true }).decode(bytes); return !bytes.some((b) => b < 32 && ![9,10,13].includes(b)); } catch { return false; }
+  }
+  return false;
+}

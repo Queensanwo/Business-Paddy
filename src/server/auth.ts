@@ -3,6 +3,8 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { Resend } from 'resend';
 import { prisma } from '@/lib/db';
 import { authTrustedOrigins } from '@/server/authOrigins';
+import { signupContext } from '@/server/signupContext';
+import { APIError } from 'better-auth/api';
 
 // Server-only: never import this module (or @/lib/db) from client components.
 // Secrets come from .env (BETTER_AUTH_SECRET, BETTER_AUTH_URL).
@@ -31,13 +33,18 @@ export const auth = betterAuth({
   },
   user: {
     additionalFields: {
-      workspaceId: { type: 'string', required: true },
-      role: { type: 'string', required: true },
+      workspaceId: { type: 'string', required: false, input: false },
+      role: { type: 'string', required: false, input: false },
     },
   },
   databaseHooks: {
     user: {
       create: {
+        before: async (user) => {
+          const trusted = signupContext.getStore();
+          if (!trusted) throw new APIError('FORBIDDEN', { message: 'Create an account through business signup or a staff invitation.' });
+          return { data: { ...user, workspaceId: trusted.workspaceId, role: trusted.role } };
+        },
         // Welcome email for new workspace owners only (staff invitees already
         // got an invitation email). Never breaks signup: failures are logged.
         after: async (user) => {

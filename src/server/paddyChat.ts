@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/db';
 import { InboxApiError } from '@/server/inboxStore';
+import { parseProfessionalProfile } from '@/lib/professionalProfile';
 
 export interface GuestAttachment {
   id: string;
@@ -83,14 +84,52 @@ export async function startGuestChat(
   workspaceId: string,
   name: string,
   text: string,
+  serviceId?: unknown,
+  profileContact?: unknown,
 ): Promise<{ token: string; conversationId: string }> {
   const guestName = clean(name, 60);
-  const firstText = clean(text, 2000);
+  let firstText = clean(text, 2000);
   const workspace = await prisma.workspace.findUnique({ where: { id: workspaceId } });
   if (!workspace) throw new InboxApiError(404, 'Business not found.');
+  const contactParts: string[] = [];
+  if (profileContact !== undefined) {
+    if (!workspace.siteEnabled || workspace.workspaceKind !== 'PROFESSIONAL') {
+      throw new InboxApiError(404, 'This profile is not available.');
+    }
+    if (!profileContact || typeof profileContact !== 'object' || Array.isArray(profileContact)) {
+      throw new InboxApiError(400, 'Invalid contact details.');
+    }
+    const { email, phone, consent } = profileContact as Record<string, unknown>;
+    if (typeof email !== 'string' || typeof phone !== 'string' || consent !== true) {
+      throw new InboxApiError(400, 'Please agree to share your contact details.');
+    }
+    const address = email.trim();
+    const number = phone.trim();
+    if (address && (address.length > 254 || !/^[a-z0-9._+\-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i.test(address))) {
+      throw new InboxApiError(400, 'Enter a valid email address.');
+    }
+    if (number && (!/^\+?[0-9 ()-]+$/.test(number) || number.length > 25 || !/^\d{7,15}$/.test(number.replace(/\D/g, '')))) {
+      throw new InboxApiError(400, 'Enter a valid phone number.');
+    }
+    if (address) contactParts.push(`email:${address}`);
+    if (number) contactParts.push(`phone:${number}`);
+    if (!contactParts.length) throw new InboxApiError(400, 'Enter a phone number or email address.');
+  }
+  if (serviceId !== undefined) {
+    const service = typeof serviceId === 'string' && serviceId.length === 36 && workspace.siteEnabled &&
+      workspace.workspaceKind === 'PROFESSIONAL' && workspace.siteProfessionalProfile
+      ? parseProfessionalProfile(workspace.siteProfessionalProfile).services.find((entry) => entry.id === serviceId)
+      : undefined;
+    if (!service) throw new InboxApiError(400, 'This service is no longer available. Open a general chat to enquire.');
+    firstText = `Enquiry about: ${service.name.replace(/[\r\n]+/g, ' ')}\n\n${firstText}`;
+  }
 
   const customer = await prisma.customer.create({
-    data: { workspaceId, name: guestName, contactDetail: 'paddy-chat:guest' },
+    data: {
+      workspaceId, name: guestName,
+      contactDetail: contactParts.length ? contactParts.join(', ') : 'paddy-chat:guest',
+      ...(contactParts.length ? { contactConsentAt: new Date(), suppressGuestReplyEmail: true } : {}),
+    },
   });
   const maxSort = await prisma.conversation.aggregate({
     where: { workspaceId },

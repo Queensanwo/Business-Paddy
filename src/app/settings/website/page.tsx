@@ -22,8 +22,8 @@ export default function WebsiteSettingsPage() {
         <header className="topbar">
           <button className="menu-btn" type="button" onClick={() => setIsMobileMenuOpen(true)}>Menu</button>
           <div>
-            <strong>Website page</strong>
-            <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>The public page customers see</div>
+            <strong>My website or portfolio</strong>
+            <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>Edit and preview your public page</div>
           </div>
           <a className="chip" href="/settings">Back</a>
         </header>

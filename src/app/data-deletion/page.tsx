@@ -9,6 +9,8 @@ export default function DataDeletionPage() {
       <li>Explain whether you are requesting deletion of an account, a connection or particular customer information. If a connected Facebook, Instagram or WhatsApp account is involved, include its public account name or business number.</li>
       <li>We will review the request, verify identity or workspace authority as needed, and explain the deletion scope and any information that must be retained.</li>
     </ol>
+    <h2>Professional pages and enquiries</h2>
+    <p>If you own a Professional page, you can unpublish it from your workspace. To request deletion of stored page content, photos or enquiries, include the page link and say what you want removed. If you sent an enquiry, include the page link or the professional’s name and the approximate date you sent it. The professional can also help identify the enquiry.</p>
     <p>Do not include passwords, tokens, full conversation histories or identity documents in your initial email. We will explain any further verification needed.</p>
     <p>Requests are handled manually. Disconnecting a provider is separate from deleting stored conversations. Deletion from Business Paddy does not automatically delete information held by Meta, email providers or other businesses.</p>
   </PublicInfoLayout>;

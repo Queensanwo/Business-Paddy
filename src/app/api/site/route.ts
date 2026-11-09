@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { InboxApiError } from '@/server/inboxStore';
 import { requireStaff } from '@/server/requireStaff';
-import { parseProfessionalProfile } from '@/lib/professionalProfile';
-import type { ProfessionalProfile, WorkspaceKind } from '@/lib/professionalProfile';
+import { parseProfessionalDraft, parseProfessionalProfile, profileImageIds } from '@/lib/professionalProfile';
+import type { ProfessionalDraft, ProfessionalProfile, WorkspaceKind } from '@/lib/professionalProfile';
 
 const db = prisma as unknown as {
   workspace: {
@@ -23,6 +24,7 @@ export interface SiteSettings {
   hasLogo: boolean;
   workspaceKind: WorkspaceKind;
   siteProfessionalProfile: ProfessionalProfile | null;
+  siteProfessionalDraft: ProfessionalDraft | null;
 }
 
 const SELECT = {
@@ -35,10 +37,18 @@ const SELECT = {
   logoStorageKey: true,
   workspaceKind: true,
   siteProfessionalProfile: true,
+  siteProfessionalDraft: true,
 };
 
 function canManage(role: string): boolean {
   return role === 'OWNER' || role === 'MANAGER';
+}
+
+async function verifyProfileImages(workspaceId: string, profile: ProfessionalProfile) {
+  const ids = profileImageIds(profile);
+  if (ids.length && await prisma.professionalImage.count({ where: { workspaceId, id: { in: ids } } }) !== ids.length) {
+    throw new InboxApiError(400, 'One or more photos do not belong to this workspace.');
+  }
 }
 
 function toShape(row: Record<string, unknown>): SiteSettings {
@@ -52,6 +62,7 @@ function toShape(row: Record<string, unknown>): SiteSettings {
     hasLogo: !!(row.logoStorageKey as string | null),
     workspaceKind: row.workspaceKind === 'PROFESSIONAL' ? 'PROFESSIONAL' : 'BUSINESS',
     siteProfessionalProfile: (row.siteProfessionalProfile as ProfessionalProfile | null) ?? null,
+    siteProfessionalDraft: (row.siteProfessionalDraft as ProfessionalDraft | null) ?? null,
   };
 }
 
@@ -61,7 +72,8 @@ export async function GET() {
     const staff = await requireStaff();
     const ws = await db.workspace.findUnique({ where: { id: staff.workspaceId }, select: SELECT });
     if (!ws) throw new InboxApiError(404, 'Workspace not found.');
-    return NextResponse.json({ site: toShape(ws as unknown as Record<string, unknown>), workspaceId: staff.workspaceId });
+    return NextResponse.json({ site: toShape(ws as unknown as Record<string, unknown>), workspaceId: staff.workspaceId },
+      { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (e) {
     if (e instanceof InboxApiError) {
       return NextResponse.json({ error: e.message }, { status: e.status });
@@ -86,8 +98,17 @@ export async function PUT(req: Request) {
       siteContact?: unknown;
       workspaceKind?: unknown;
       siteProfessionalProfile?: unknown;
+      professionalDraft?: unknown;
     };
     const data: Record<string, unknown> = {};
+    if (body.professionalDraft !== undefined) {
+      let draft: ProfessionalDraft;
+      try { draft = parseProfessionalDraft(body.professionalDraft); }
+      catch (error) { throw new InboxApiError(400, error instanceof Error ? error.message : 'Invalid website draft.'); }
+      await verifyProfileImages(staff.workspaceId, draft.profile);
+      await db.workspace.update({ where: { id: staff.workspaceId }, data: { siteProfessionalDraft: draft }, select: SELECT });
+      return NextResponse.json({ saved: true });
+    }
     if (body.workspaceKind !== undefined) {
       if (body.workspaceKind !== 'BUSINESS' && body.workspaceKind !== 'PROFESSIONAL') {
         throw new InboxApiError(400, 'Choose Business or Professional.');
@@ -95,8 +116,12 @@ export async function PUT(req: Request) {
       data.workspaceKind = body.workspaceKind;
     }
     if (body.siteProfessionalProfile !== undefined) {
-      try { data.siteProfessionalProfile = parseProfessionalProfile(body.siteProfessionalProfile); }
+      let profile: ProfessionalProfile;
+      try { profile = parseProfessionalProfile(body.siteProfessionalProfile); }
       catch (error) { throw new InboxApiError(400, error instanceof Error ? error.message : 'Invalid professional profile.'); }
+      await verifyProfileImages(staff.workspaceId, profile);
+      data.siteProfessionalProfile = profile;
+      data.siteProfessionalDraft = Prisma.DbNull;
     }
     if (typeof body.siteEnabled !== 'undefined') {
       if (typeof body.siteEnabled !== 'boolean') {

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import styles from './home.module.css';
 
 function Logo() {
   return (
@@ -92,6 +93,7 @@ export default function LandingPage() {
         <Logo />
         <nav>
           <a href="#features">Features</a>
+          <a href="#professional">For professionals</a>
           <a href="#how">How it works</a>
           <Link href="/sign-in">Sign in</Link>
           <Link href="/sign-up" className="lp-btn">Get started</Link>
@@ -112,6 +114,30 @@ export default function LandingPage() {
             </div>
           </div>
           <ProductPreview />
+        </section>
+
+        <section className={styles.professional} id="professional" aria-labelledby="professional-heading">
+          <div>
+            <p className="lp-eyebrow">Business Paddy Professional</p>
+            <h2 id="professional-heading">Build your brand with a page of your own.</h2>
+            <p className={styles.description}>Share your services, show your work, and give people a way to reach you through Paddy Chat. All from one link.</p>
+            <Link href="/sign-up?type=professional" className="lp-btn">Create my professional page</Link>
+          </div>
+          <figure className={styles.preview}>
+            <figcaption>Example professional page</figcaption>
+            <div className={styles.profile}>
+              <span className={styles.avatar} aria-hidden="true">AO</span>
+              <div>
+                <h3>Ada Okafor</h3>
+                <p>Brand photographer</p>
+              </div>
+            </div>
+            <ul className={styles.services} aria-label="Example services">
+              <li>Brand portraits</li>
+              <li>Product photography</li>
+            </ul>
+            <span className={styles.chat}>Chat with Ada</span>
+          </figure>
         </section>
 
         <section className="lp-features" id="features">

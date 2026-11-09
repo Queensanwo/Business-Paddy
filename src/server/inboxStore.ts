@@ -150,7 +150,7 @@ async function notifyGuestReply(conversationId: string): Promise<void> {
       },
     });
     if (!conv || conv.channel !== 'PADDY_CHAT' || !conv.guestToken) return;
-    if (!conv.customer?.contactConsentAt) return;
+    if (!conv.customer?.contactConsentAt || conv.customer.suppressGuestReplyEmail) return;
     const email = (conv.customer.contactDetail ?? '')
       .split(',')
       .map((p) => p.trim())

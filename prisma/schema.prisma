@@ -81,6 +81,8 @@ model Workspace {
   siteHours       String?
   siteContact     String?
   siteProfessionalProfile Json?
+  siteProfessionalDraft Json?
+  professionalImages ProfessionalImage[]
   workspaceKind WorkspaceKind @default(BUSINESS)
   // Phase 5 customer feedback (FR36/FR37): one-tap rating after resolution.
   // The business can switch requests off; stored per conversation.
@@ -166,6 +168,7 @@ model Customer {
   workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   name          String
   contactDetail String?
+  suppressGuestReplyEmail Boolean @default(false)
   // Consent for follow-up contact (1F). Set only when the guest explicitly
   // opts in after a resolved chat or completed deal. Never assumed.
   contactConsentAt DateTime?
@@ -432,4 +435,15 @@ model AuditLog {
 enum WorkspaceKind {
   BUSINESS
   PROFESSIONAL
+}
+
+model ProfessionalImage {
+  id String @id @default(cuid())
+  workspaceId String
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  storageKey String @unique
+  mimeType String
+  createdAt DateTime @default(now())
+
+  @@index([workspaceId])
 }

@@ -5,8 +5,8 @@ import { checkRateLimit } from '@/server/rateLimit';
 
 export async function POST(req: Request) {
   try {
-    checkRateLimit(req, 'paddy-start', 10, 3600000);
-    const body = (await req.json()) as { workspaceId?: unknown; name?: unknown; text?: unknown };
+    await checkRateLimit(req, 'paddy-start', 10, 3600000);
+    const body = (await req.json()) as { workspaceId?: unknown; name?: unknown; text?: unknown; serviceId?: unknown; profileContact?: unknown };
     if (typeof body.workspaceId !== 'string') {
       return NextResponse.json({ error: 'A business is required.' }, { status: 400 });
     }
@@ -14,6 +14,8 @@ export async function POST(req: Request) {
       body.workspaceId,
       body.name as string,
       body.text as string,
+      body.serviceId,
+      body.profileContact,
     );
     return NextResponse.json(result);
   } catch (e) {

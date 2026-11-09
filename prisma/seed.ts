@@ -1,5 +1,6 @@
 import { PrismaClient, Channel, ConvStatus } from '@prisma/client';
 import { auth } from '../src/server/auth';
+import { signupContext } from '../src/server/signupContext';
 
 const prisma = new PrismaClient();
 
@@ -144,20 +145,18 @@ async function main() {
   await prisma.user.deleteMany({
     where: { workspaceId: workspace.id, email: { in: [OWNER_EMAIL, AGENT_EMAIL] } },
   });
-  const ownerSignup = await auth.api.signUpEmail({
+  const ownerSignup = await signupContext.run({ workspaceId: workspace.id, role: 'OWNER' }, () => auth.api.signUpEmail({
     headers: new Headers(),
     body: {
       name: 'Ayo Sanwo', email: OWNER_EMAIL, password: OWNER_PASSWORD,
-      workspaceId: workspace.id, role: 'OWNER',
     },
-  });
-  const agentSignup = await auth.api.signUpEmail({
+  }));
+  const agentSignup = await signupContext.run({ workspaceId: workspace.id, role: 'AGENT' }, () => auth.api.signUpEmail({
     headers: new Headers(),
     body: {
       name: 'Funke Bello', email: AGENT_EMAIL, password: AGENT_PASSWORD,
-      workspaceId: workspace.id, role: 'AGENT',
     },
-  });
+  }));
   const owner = { id: ownerSignup.user.id };
   const agent = { id: agentSignup.user.id };
 

@@ -156,16 +156,15 @@ export async function acceptInvitation(
   });
   if (claimed.count === 0) throw new InboxApiError(410, 'This invitation has already been used.');
 
-  const signup = await auth.api.signUpEmail({
+  const { signupContext } = await import('@/server/signupContext');
+  const signup = await signupContext.run({ workspaceId: row.workspaceId, role: row.role }, () => auth.api.signUpEmail({
     headers: new Headers(),
     body: {
       name: row.name,
       email: row.email,
       password,
-      workspaceId: row.workspaceId,
-      role: row.role,
     },
-  });
+  }));
   await prisma.auditLog.create({
     data: {
       workspaceId: row.workspaceId,

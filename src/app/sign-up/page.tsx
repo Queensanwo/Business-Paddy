@@ -1,11 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { WorkspaceKind } from '@/lib/professionalProfile';
 import { WorkspaceChoice } from '@/components/WorkspaceChoice';
-import { authClient } from '@/lib/auth-client';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -20,33 +19,28 @@ export default function SignUpPage() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('type') === 'professional') {
+      setWorkspaceKind('PROFESSIONAL');
+    }
+  }, []);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setBusy(true);
     try {
-      const wsRes = await fetch('/api/workspaces', {
+      const wsRes = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: businessName, industry, mode, workspaceKind }),
+        body: JSON.stringify({ businessName, industry, name: ownerName, email, password, workspaceKind }),
       });
-      const ws = (await wsRes.json()) as { id?: string; error?: string };
-      if (!wsRes.ok || !ws.id) throw new Error(ws.error || 'Workspace creation failed.');
-
-      const { error: err } = await authClient.signUp.email({
-        name: ownerName,
-        email,
-        password,
-        workspaceId: ws.id,
-        role: 'OWNER',
-      } as Parameters<typeof authClient.signUp.email>[0]);
-      if (err) {
-        throw new Error(
-          typeof (err as { message?: unknown }).message === 'string' &&
-            (err as { message: string }).message
-            ? (err as { message: string }).message
-            : 'Owner account creation failed. If the email is new, the database may be waking up — wait a minute and try again.',
-        );
+      const result = await wsRes.json();
+      if (!wsRes.ok) throw new Error(result.error || result.message || 'Could not create your account.');
+      if (!result.token) {
+        setError('Your account was created. Check your email for a verification link, then sign in.');
+        setBusy(false);
+        return;
       }
       router.push(workspaceKind === 'PROFESSIONAL' ? '/settings/website' : '/inbox');
     } catch (e) {
@@ -106,7 +100,7 @@ export default function SignUpPage() {
           <span>Mode</span>
           <div className="filters">
             <button type="button" className={`chip${mode === 'DEMO' ? ' active' : ''}`} onClick={() => setMode('DEMO')}>Demo</button>
-            <button type="button" className={`chip${mode === 'LIVE' ? ' active' : ''}`} onClick={() => setMode('LIVE')}>Live</button>
+            <span className="assignee">Real connections are enabled after account verification.</span>
           </div>
           {mode === 'LIVE' ? (
             <p className="assignee">Live mode needs email/phone verification (next step). You can start in Demo.</p>
