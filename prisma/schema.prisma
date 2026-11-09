@@ -80,6 +80,8 @@ model Workspace {
   siteProducts    String?
   siteHours       String?
   siteContact     String?
+  siteProfessionalProfile Json?
+  workspaceKind WorkspaceKind @default(BUSINESS)
   // Phase 5 customer feedback (FR36/FR37): one-tap rating after resolution.
   // The business can switch requests off; stored per conversation.
   feedbackEnabled Boolean @default(true)
@@ -425,4 +427,9 @@ model AuditLog {
   createdAt  DateTime @default(now())
 
   @@index([workspaceId, createdAt])
+}
+
+enum WorkspaceKind {
+  BUSINESS
+  PROFESSIONAL
 }

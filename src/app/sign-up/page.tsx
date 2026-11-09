@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import type { WorkspaceKind } from '@/lib/professionalProfile';
 import { authClient } from '@/lib/auth-client';
 
 export default function SignUpPage() {
   const router = useRouter();
   const [businessName, setBusinessName] = useState('');
+  const [workspaceKind, setWorkspaceKind] = useState<WorkspaceKind>('BUSINESS');
   const [industry, setIndustry] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [email, setEmail] = useState('');
@@ -25,7 +27,7 @@ export default function SignUpPage() {
       const wsRes = await fetch('/api/workspaces', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: businessName, industry, mode }),
+        body: JSON.stringify({ name: businessName, industry, mode, workspaceKind }),
       });
       const ws = (await wsRes.json()) as { id?: string; error?: string };
       if (!wsRes.ok || !ws.id) throw new Error(ws.error || 'Workspace creation failed.');
@@ -45,7 +47,7 @@ export default function SignUpPage() {
             : 'Owner account creation failed. If the email is new, the database may be waking up — wait a minute and try again.',
         );
       }
-      router.push('/inbox');
+      router.push(workspaceKind === 'PROFESSIONAL' ? '/settings/website' : '/inbox');
     } catch (e) {
       setError(
         e instanceof Error && e.message
@@ -66,8 +68,14 @@ export default function SignUpPage() {
             <p>Create your business workspace</p>
           </div>
         </div>
+        <fieldset disabled={busy}>
+          <legend>How will you use Business Paddy?</legend>
+          <label><input type="radio" name="workspaceKind" checked={workspaceKind === 'PROFESSIONAL'} onChange={() => setWorkspaceKind('PROFESSIONAL')} /> Professional — show my work and receive enquiries</label>
+          <br />
+          <label><input type="radio" name="workspaceKind" checked={workspaceKind === 'BUSINESS'} onChange={() => setWorkspaceKind('BUSINESS')} /> Business — manage customer conversations and my team</label>
+        </fieldset>
         <label className="auth-field">
-          Business name
+          {workspaceKind === 'PROFESSIONAL' ? 'Professional or brand name' : 'Business name'}
           <input required value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
         </label>
         <label className="auth-field">

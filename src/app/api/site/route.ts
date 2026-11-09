@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { InboxApiError } from '@/server/inboxStore';
 import { requireStaff } from '@/server/requireStaff';
+import { parseProfessionalProfile } from '@/lib/professionalProfile';
+import type { ProfessionalProfile, WorkspaceKind } from '@/lib/professionalProfile';
 
 const db = prisma as unknown as {
   workspace: {
@@ -19,6 +21,8 @@ export interface SiteSettings {
   siteHours: string | null;
   siteContact: string | null;
   hasLogo: boolean;
+  workspaceKind: WorkspaceKind;
+  siteProfessionalProfile: ProfessionalProfile | null;
 }
 
 const SELECT = {
@@ -29,6 +33,8 @@ const SELECT = {
   siteHours: true,
   siteContact: true,
   logoStorageKey: true,
+  workspaceKind: true,
+  siteProfessionalProfile: true,
 };
 
 function canManage(role: string): boolean {
@@ -44,6 +50,8 @@ function toShape(row: Record<string, unknown>): SiteSettings {
     siteHours: (row.siteHours as string | null) ?? null,
     siteContact: (row.siteContact as string | null) ?? null,
     hasLogo: !!(row.logoStorageKey as string | null),
+    workspaceKind: row.workspaceKind === 'PROFESSIONAL' ? 'PROFESSIONAL' : 'BUSINESS',
+    siteProfessionalProfile: (row.siteProfessionalProfile as ProfessionalProfile | null) ?? null,
   };
 }
 
@@ -76,8 +84,20 @@ export async function PUT(req: Request) {
       siteProducts?: unknown;
       siteHours?: unknown;
       siteContact?: unknown;
+      workspaceKind?: unknown;
+      siteProfessionalProfile?: unknown;
     };
     const data: Record<string, unknown> = {};
+    if (body.workspaceKind !== undefined) {
+      if (body.workspaceKind !== 'BUSINESS' && body.workspaceKind !== 'PROFESSIONAL') {
+        throw new InboxApiError(400, 'Choose Business or Professional.');
+      }
+      data.workspaceKind = body.workspaceKind;
+    }
+    if (body.siteProfessionalProfile !== undefined) {
+      try { data.siteProfessionalProfile = parseProfessionalProfile(body.siteProfessionalProfile); }
+      catch (error) { throw new InboxApiError(400, error instanceof Error ? error.message : 'Invalid professional profile.'); }
+    }
     if (typeof body.siteEnabled !== 'undefined') {
       if (typeof body.siteEnabled !== 'boolean') {
         return NextResponse.json({ error: 'siteEnabled must be true or false.' }, { status: 400 });

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { InboxApiError } from '@/server/inboxStore';
 import { checkRateLimit } from '@/server/rateLimit';
+import { parseProfessionalProfile } from '@/lib/professionalProfile';
 
 const db = prisma as unknown as {
   workspace: {
@@ -16,7 +17,7 @@ const db = prisma as unknown as {
  */
 export async function GET(req: Request, { params }: { params: { workspaceId: string } }) {
   try {
-    checkRateLimit(req, 'site-profile', 120, 3600000);
+    await checkRateLimit(req, 'site-profile', 120, 3600000);
     const ws = await db.workspace.findUnique({
       where: { id: params.workspaceId },
       select: {
@@ -30,6 +31,8 @@ export async function GET(req: Request, { params }: { params: { workspaceId: str
         theme: true,
         accentColor: true,
         logoStorageKey: true,
+        workspaceKind: true,
+        siteProfessionalProfile: true,
       },
     });
     if (!ws || (ws as { siteEnabled: boolean }).siteEnabled !== true) {
@@ -45,6 +48,8 @@ export async function GET(req: Request, { params }: { params: { workspaceId: str
       theme: string;
       accentColor: string | null;
       logoStorageKey: string | null;
+      workspaceKind: string;
+      siteProfessionalProfile: unknown;
     };
     return NextResponse.json({
       business: {
@@ -58,8 +63,11 @@ export async function GET(req: Request, { params }: { params: { workspaceId: str
         accentColor: row.accentColor,
         logoUrl: row.logoStorageKey ? `/api/sites/${row.id}/logo` : null,
         chatUrl: `/chat/${row.id}`,
+        professional: row.workspaceKind === 'PROFESSIONAL',
+        profile: row.workspaceKind === 'PROFESSIONAL' && row.siteProfessionalProfile
+          ? parseProfessionalProfile(row.siteProfessionalProfile) : null,
       },
-    });
+    }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (e) {
     if (e instanceof InboxApiError) {
       return NextResponse.json({ error: e.message }, { status: e.status });
