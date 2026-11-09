@@ -1,0 +1,69 @@
+.group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.group legend {
+  margin-block-end: 10px;
+  padding: 0;
+  font-weight: 700;
+}
+
+.options {
+  display: grid;
+  gap: 8px;
+}
+
+.option {
+  position: relative;
+  cursor: pointer;
+}
+
+.radio {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 64px;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #aabfe8;
+  border-radius: 12px;
+  background: #eef4ff;
+  color: #12336c;
+}
+
+.option:hover .card { border-color: #1d4fb8; }
+.radio:checked + .card { background: #1d4fb8; border-color: #1d4fb8; color: #fff; }
+.radio:focus-visible + .card { outline: 2px solid #1d4fb8; outline-offset: 3px; }
+.radio:disabled + .card { cursor: wait; opacity: .72; }
+
+.copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.copy > span { font-size: .875rem; line-height: 1.4; }
+
+.indicator {
+  flex: 0 0 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+.radio:checked + .card .indicator { background: #fff; box-shadow: inset 0 0 0 3px #1d4fb8; }
+
+@media (forced-colors: active) {
+  .radio:checked + .card .indicator { background: Highlight; forced-color-adjust: none; border-color: Highlight; }
+}

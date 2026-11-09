@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { WorkspaceKind } from '@/lib/professionalProfile';
+import { WorkspaceChoice } from '@/components/WorkspaceChoice';
 import { authClient } from '@/lib/auth-client';
 
 export default function SignUpPage() {
@@ -68,12 +69,7 @@ export default function SignUpPage() {
             <p>Create your business workspace</p>
           </div>
         </div>
-        <fieldset disabled={busy}>
-          <legend>How will you use Business Paddy?</legend>
-          <label><input type="radio" name="workspaceKind" checked={workspaceKind === 'PROFESSIONAL'} onChange={() => setWorkspaceKind('PROFESSIONAL')} /> Professional — show my work and receive enquiries</label>
-          <br />
-          <label><input type="radio" name="workspaceKind" checked={workspaceKind === 'BUSINESS'} onChange={() => setWorkspaceKind('BUSINESS')} /> Business — manage customer conversations and my team</label>
-        </fieldset>
+        <WorkspaceChoice value={workspaceKind} onChange={setWorkspaceKind} disabled={busy} />
         <label className="auth-field">
           {workspaceKind === 'PROFESSIONAL' ? 'Professional or brand name' : 'Business name'}
           <input required value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
