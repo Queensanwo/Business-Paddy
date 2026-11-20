@@ -5,10 +5,35 @@ import { prisma } from '@/lib/db';
 import { authTrustedOrigins } from '@/server/authOrigins';
 import { signupContext } from '@/server/signupContext';
 import { APIError } from 'better-auth/api';
+import { passkey } from '@better-auth/passkey';
 
 // Server-only: never import this module (or @/lib/db) from client components.
 // Secrets come from .env (BETTER_AUTH_SECRET, BETTER_AUTH_URL).
 export const auth = betterAuth({
+  plugins: [
+    passkey({
+      rpName: 'Business Paddy',
+      rpID: process.env.NODE_ENV === 'production' ? 'businesspaddy.com.ng' : 'localhost',
+      origin: process.env.NODE_ENV === 'production'
+        ? ['https://businesspaddy.com.ng', 'https://www.businesspaddy.com.ng']
+        : authTrustedOrigins(),
+      authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+      registration: {
+        afterVerification: ({ verification }) => {
+          if (!verification.registrationInfo?.userVerified) {
+            throw new APIError('UNAUTHORIZED', { message: 'Confirm your identity using your device screen lock.' });
+          }
+        },
+      },
+      authentication: {
+        afterVerification: ({ verification }) => {
+          if (!verification.authenticationInfo.userVerified) {
+            throw new APIError('UNAUTHORIZED', { message: 'Confirm your identity using your device screen lock.' });
+          }
+        },
+      },
+    }),
+  ],
   database: prismaAdapter(prisma, { provider: 'postgresql' }),
   baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
   trustedOrigins: authTrustedOrigins(),
@@ -93,7 +118,8 @@ export const auth = betterAuth({
     },
   },
   session: {
-    expiresIn: 60 * 60 * 24 * 7,
+    expiresIn: 60 * 60 * 24 * 30,
+    updateAge: 60 * 60 * 24,
   },
 });
 

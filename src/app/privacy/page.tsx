@@ -3,10 +3,11 @@ import { PublicInfoLayout } from '@/components/PublicInfoLayout';
 export const metadata: Metadata = { title: 'Privacy notice | Business Paddy' };
 export default function PrivacyPage() {
   return <PublicInfoLayout title="Privacy notice">
-    <p>Last updated: 9 November 2026.</p>
+    <p>Last updated: 20 November 2026.</p>
     <h2>Information processed</h2>
     <p>When you create an account or use a workspace, Business Paddy processes account and business details, team membership, customer contact information, conversations, attachments, reminders and activity records that you or your customers provide. Authentication uses session cookies. Hosting and service providers may also process technical request information to operate the service.</p>
     <h2>Why we use information</h2>
+    <p>If you choose “Remember me”, a login cookie keeps you signed in on that device for up to 30 days, with renewal when you use the service. Signing out ends that session. If you add a passkey, we store its public key, identifier and device information to verify sign-in. Fingerprint and face verification are handled by your device.</p>
     <p>We use this information to provide the shared inbox, authenticate users, organise conversations, support team workflows, investigate problems and respond to support or privacy requests. Workspace owners and authorized staff can access information available to their roles.</p>
     <h2>Professional pages and enquiries</h2>
     <p>When you build a Professional page, Business Paddy stores the profile details, service descriptions, photos and links you add. Draft changes are visible in your workspace. Once published, the page and the details you choose to include are visible to anyone who visits it. You can edit or unpublish your page from your workspace.</p>

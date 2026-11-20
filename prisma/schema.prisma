@@ -120,6 +120,7 @@ model User {
   auditActions          AuditLog[]     @relation("Actor")
   sessions              Session[]
   accounts              Account[]
+  passkeys              Passkey[]
 
   @@index([workspaceId, email])
 }
@@ -446,4 +447,21 @@ model ProfessionalImage {
   createdAt DateTime @default(now())
 
   @@index([workspaceId])
+}
+
+model Passkey {
+  id           String   @id @default(cuid())
+  name         String?
+  publicKey    String
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialID String   @unique
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  createdAt    DateTime @default(now())
+  aaguid       String?
+
+  @@index([userId])
 }

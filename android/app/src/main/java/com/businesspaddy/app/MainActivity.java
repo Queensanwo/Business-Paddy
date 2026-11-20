@@ -6,11 +6,12 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.CookieManager;
 
 /** Thin wrapper: loads the live Business Paddy PWA. No secrets bundled. */
 public class MainActivity extends Activity {
 
-    private static final String HOME = "https://business-paddy.netlify.app/";
+    private static final String HOME = "https://businesspaddy.com.ng/";
 
     private WebView webView;
 
@@ -22,6 +23,7 @@ public class MainActivity extends Activity {
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        CookieManager.getInstance().setAcceptCookie(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -34,6 +36,12 @@ public class MainActivity extends Activity {
         } else {
             webView.restoreState(savedInstanceState);
         }
+    }
+
+    @Override
+    protected void onPause() {
+        CookieManager.getInstance().flush();
+        super.onPause();
     }
 
     @Override

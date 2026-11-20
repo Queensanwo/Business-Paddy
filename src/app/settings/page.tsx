@@ -45,6 +45,7 @@ const GROUPS: MenuGroup[] = [
   {
     heading: 'Workspace',
     items: [
+      { href: '/settings/sign-in', icon: '🔑', name: 'Easy sign-in', description: 'Set up fingerprint or passkey sign-in' },
       { href: '/settings/billing', icon: '💳', name: 'Billing', description: 'Test payments and history' },
       { href: '/settings/ownership', icon: '🔑', name: 'Ownership', description: 'Hand over to a new owner' },
     ],
