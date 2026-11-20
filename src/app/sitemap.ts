@@ -1,0 +1,7 @@
+import type { MetadataRoute } from 'next';
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  return ['', '/contact', '/privacy', '/terms', '/data-deletion'].map((path) => ({
+    url: 'https://businesspaddy.com.ng' + (path || '/'),
+  }));
+}

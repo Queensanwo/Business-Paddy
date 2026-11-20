@@ -1,5 +1,39 @@
 import Link from 'next/link';
 import styles from './home.module.css';
+import type { Metadata } from 'next';
+
+const description = 'Business Paddy is an omnichannel customer service platform that helps business owners manage customer conversations, follow-ups and customer experience from one inbox.';
+
+export const metadata: Metadata = {
+  title: 'Business Paddy | Omnichannel Customer Service Made Simple',
+  description,
+  alternates: { canonical: 'https://businesspaddy.com.ng/' },
+  openGraph: {
+    title: 'Business Paddy | Omnichannel Customer Service Made Simple',
+    description,
+    url: 'https://businesspaddy.com.ng/',
+    siteName: 'Business Paddy',
+    type: 'website',
+  },
+};
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'Organization', '@id': 'https://businesspaddy.com.ng/#organization',
+      name: 'Ohevlishon Enterprise', url: 'https://businesspaddy.com.ng/contact',
+      email: 'businesspaddysupport@gmail.com' },
+    { '@type': 'WebSite', '@id': 'https://businesspaddy.com.ng/#website',
+      name: 'Business Paddy', url: 'https://businesspaddy.com.ng/',
+      publisher: { '@id': 'https://businesspaddy.com.ng/#organization' } },
+    { '@type': 'SoftwareApplication', name: 'Business Paddy',
+      url: 'https://businesspaddy.com.ng/', applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web', description,
+      publisher: { '@id': 'https://businesspaddy.com.ng/#organization' },
+      featureList: ['Shared inbox for supported connected channels', 'Customer follow-ups',
+        'Team conversation management', 'Professional pages and Paddy Chat'] },
+  ],
+};
 
 function Logo() {
   return (
@@ -89,6 +123,7 @@ function ProductPreview() {
 export default function LandingPage() {
   return (
     <div className="lp">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }} />
       <header className="lp-nav">
         <Logo />
         <nav>
@@ -103,11 +138,13 @@ export default function LandingPage() {
       <main>
         <section className="lp-hero">
           <div className="lp-hero-copy">
-            <p className="lp-eyebrow">Welcome to Business Paddy</p>
-            <h1>Customer conversations. Made simple.</h1>
+            <p className="lp-eyebrow">Business Paddy · Omnichannel customer service</p>
+            <h1>Customer service and experience. Made simple.</h1>
             <p className="lp-sub">
-              A simpler way to organise chats, follow up with customers, and keep your business moving.
+              Business Paddy brings customer conversations from your connected channels into one inbox.
+              As the business owner, you can reply, follow up, and manage how your customers are helped.
             </p>
+            <p>Omnichannel simply means helping customers across different channels from one place.</p>
             <div className="lp-cta-row">
               <Link href="/sign-up" className="lp-btn big">Get started</Link>
               <a href="#features" className="lp-btn ghost big">Explore features</a>
@@ -146,17 +183,17 @@ export default function LandingPage() {
             <article>
               <span className="lp-icon" aria-hidden="true">💬</span>
               <h3>Organise conversations</h3>
-              <p>Keep all your customer chats in one place, with a clear and simple inbox.</p>
+              <p>Find messages from your supported, connected channels in one inbox. See which customers need a reply.</p>
             </article>
             <article>
               <span className="lp-icon" aria-hidden="true">👤</span>
               <h3>Keep customer details together</h3>
-              <p>See past conversations and important details, so every chat feels personal.</p>
+              <p>See customer details and past conversations so you and your team can give more personal help.</p>
             </article>
             <article>
               <span className="lp-icon" aria-hidden="true">📊</span>
               <h3>See your response progress</h3>
-              <p>Quickly see what&apos;s been received, answered, and still needs attention.</p>
+              <p>As the owner, see what has been answered, assign conversations to your team, and follow up on requests.</p>
             </article>
           </div>
         </section>
@@ -164,11 +201,12 @@ export default function LandingPage() {
         <section className="lp-how" id="how">
           <h2>How it works</h2>
           <ol>
-            <li><strong>Create your workspace.</strong> Create a Business Paddy account and add your business details.</li>
-            <li><strong>Connect your business accounts.</strong> Add and authorize your own messaging or email accounts in Settings. Real messages require a supported, approved connection.</li>
-            <li><strong>Answer from one inbox.</strong> Read and reply to conversations from your connected accounts in one place.</li>
-            <li><strong>Follow up and track.</strong> Claim, assign, resolve and review how each customer was helped.</li>
+            <li><strong>Create your account.</strong> Choose Business or Professional and add your details.</li>
+            <li><strong>Connect your channels.</strong> Open Settings to connect a supported messaging or email account. Each channel needs its own setup and authorization.</li>
+            <li><strong>Help customers from one inbox.</strong> Read enquiries and reply yourself, or assign a conversation to someone on your team.</li>
+            <li><strong>Follow up.</strong> Check unanswered messages, set reminders, and mark requests as resolved when you have helped the customer.</li>
           </ol>
+          <p>For example, a customer asks about an order through a connected channel. You see the message in Business Paddy, reply, and set a reminder to check that everything arrived.</p>
         </section>
 
         <section className="lp-banner">
