@@ -12,18 +12,24 @@ export default function ForgotPasswordPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setError('');
     setBusy(true);
-    const { error: err } = await authClient.requestPasswordReset({
-      email,
-      redirectTo: '/reset-password',
-    });
-    setBusy(false);
-    if (err) {
-      setError('Could not send the reset email. Try again later.');
-      return;
+    try {
+      const { error: err } = await authClient.requestPasswordReset({
+        email: email.trim(),
+        redirectTo: '/reset-password',
+      });
+      if (err) {
+        setError('We could not request a reset email. Please try again or contact support.');
+        return;
+      }
+      setSent(true);
+    } catch {
+      setError('Could not reach the reset service. Check your connection and try again.');
+    } finally {
+      setBusy(false);
     }
-    setSent(true);
   }
 
   return (
@@ -37,9 +43,9 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
         {sent ? (
-          <p className="assignee">
-            If an account uses that email, a reset link is on its way. Check your inbox
-            (and spam folder), then follow the link to choose a new password.
+          <p className="assignee" role="status">
+            Your request was received. If this email belongs to an account, we’ll request a reset email.
+            If it hasn’t arrived after a few minutes, check your account email or contact support.
           </p>
         ) : (
           <>
@@ -47,7 +53,7 @@ export default function ForgotPasswordPage() {
               Account email
               <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
             </label>
-            {error ? <p className="auth-error">{error}</p> : null}
+            {error ? <p className="auth-error" role="alert">{error}</p> : null}
             <button className="send" type="submit" disabled={busy} style={{ width: '100%' }}>
               {busy ? 'Sending…' : 'Send reset link'}
             </button>
@@ -55,6 +61,9 @@ export default function ForgotPasswordPage() {
         )}
         <p className="auth-alt">
           <Link href="/sign-in">Back to sign in</Link>
+        </p>
+        <p className="auth-alt">
+          Need help? <a href="mailto:businesspaddysupport@gmail.com">Contact Business Paddy support</a>
         </p>
       </form>
     </div>

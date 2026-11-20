@@ -43,17 +43,16 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       const key = process.env.RESEND_API_KEY;
       if (!key) throw new Error('Email is not configured.');
-      await new Resend(key).emails.send({
+      const { data, error } = await new Resend(key).emails.send({
         from: process.env.RESEND_FROM_EMAIL ?? 'Business Paddy <onboarding@resend.dev>',
         to: user.email,
         subject: 'Reset your Business Paddy password',
-        html:
-          `<p>Hello ${user.name ?? 'there'},</p>` +
-          `<p>Someone requested a password reset for your Business Paddy login.</p>` +
-          `<p><a href="${url}">Choose a new password</a></p>` +
-          `<p>This link expires soon and can only be used once. ` +
-          `If that wasn't you, just ignore this email — your password stays the same.</p>`,
+        text: `Someone requested a password reset for your Business Paddy login. Choose a new password: ${url}\nThis link expires and can be used once. If you did not request this, ignore this email.`,
       });
+      if (error || !data?.id) {
+        console.error('Password reset email rejected', error?.name || 'missing_email_id');
+        throw new Error('Password reset email could not be delivered.');
+      }
     },
   },
   user: {
