@@ -62,9 +62,9 @@ export function InboxList({ conversations, unansweredIds, filter, selectedId, on
       <div className="conv-list" id="convList">
         {showWhatsAppSetup ? (
           <div style={{ padding: '16px' }}>
-            <Link href="/settings/whatsapp" className="chip">Connect WhatsApp</Link>
+            <Link href="/settings/whatsapp" className="chip">WhatsApp connection settings</Link>
             <p className="assignee" style={{ marginTop: '6px' }}>
-              {demoMode ? 'A Live workspace is required to receive real messages.' : 'Open WhatsApp setup to connect or check your number.'}
+              {demoMode ? 'A Live workspace is required to receive real messages.' : 'Check your connection status in Settings. Incoming WhatsApp conversations will appear here.'}
             </p>
           </div>
         ) : null}
