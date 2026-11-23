@@ -8,6 +8,7 @@ import { Navigation } from '@/components/Navigation';
 import { InboxList } from '@/components/InboxList';
 import { MetricCards } from '@/components/MetricCards';
 import { ConversationThread, AssignableStaff } from '@/components/ConversationThread';
+import styles from './inbox.module.css';
 
 async function signOut() {
   await authClient.signOut();
@@ -124,7 +125,7 @@ export default function InboxPage() {
   }
 
   return (
-    <div className={`app ${isListMode ? 'list-mode' : ''}`} id="app">
+    <div className={`app ${styles.workspace} ${isListMode ? 'list-mode' : ''}`} id="app">
       <Navigation
         isOpen={isMobileMenuOpen}
         onClose={closeMobileMenu}
@@ -149,7 +150,7 @@ export default function InboxPage() {
         <header className="topbar">
           <button className="menu-btn" id="menuBtn" type="button" onClick={toggleMobileMenu}>Menu</button>
           <div>
-            <strong>Owner performance</strong>
+            <strong>Your shared inbox</strong>
             <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>Today · {user?.workspaceName ?? 'Business Paddy'}</div>
           </div>
           <button className="chip" id="backBtn" type="button" onClick={goBackToList}>Inbox list</button>
@@ -178,7 +179,14 @@ export default function InboxPage() {
             ))}
           </div>
         ) : null}
-        <ConversationThread
+        {!selectedId ? <div className={styles.welcome}>
+          <div className={styles.welcomeIcon} aria-hidden="true">✦</div>
+          <span className={styles.eyebrow}>A little more connected</span>
+          <h2>Good conversations start here.</h2>
+          <p>Choose a conversation to reply, follow up, and give your customers a helping hand.</p>
+          <div className={styles.channelPills}><span>WhatsApp</span><span>Instagram</span><span>Email</span><span>+ more</span></div>
+          <a href="/settings">Manage your channels <span aria-hidden="true">→</span></a>
+        </div> : <ConversationThread
           conversation={conversations.find(c => c.id === selectedId)}
           onSendReply={sendReply}
           onRunMacro={(macroId) => runMacro(selectedId, macroId)}
@@ -193,7 +201,7 @@ export default function InboxPage() {
           staff={staff}
           onAssign={assignConversation}
           deliveryNotice={deliveryNotice}
-        />
+        />}
       </section>
     </div>
   );

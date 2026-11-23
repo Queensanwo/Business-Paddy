@@ -21,6 +21,7 @@ interface InboxListProps {
 export function InboxList({ conversations, unansweredIds, filter, selectedId, onFilterChange, onConversationClick, demoMode, canManageChannels, onOpenMenu }: InboxListProps) {
   const [demoBusy, setDemoBusy] = useState(false);
   const [demoError, setDemoError] = useState('');
+  const [search, setSearch] = useState('');
   async function loadSamples() {
     setDemoBusy(true);
     setDemoError('');
@@ -35,19 +36,21 @@ export function InboxList({ conversations, unansweredIds, filter, selectedId, on
     }
   }
   const filteredConversations = conversations.filter((c) => {
+    if (search.trim() && !`${c.name} ${c.preview}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())) return false;
     if (filter === 'all') return true;
     if (filter === 'unanswered') return unansweredIds.has(c.id);
     return c.channel === filter;
   });
-
   const showWhatsAppSetup = canManageChannels && (filter === 'whatsapp' || filter === 'all') && !conversations.some((c) => c.channel === 'whatsapp');
 
   return (
     <section className="inbox" id="inbox">
       <div className="inbox-head">
         <button className="menu-btn" type="button" onClick={onOpenMenu} aria-label="Open navigation for Team, Settings and Workspace" aria-controls="nav">Menu</button>
-        <h2>All conversations{demoMode ? <span className="status">Demo — no real messages are sent</span> : null}</h2>
-        <p>WhatsApp, Instagram, TikTok, email, Paddy Chat and Facebook in one place</p>
+        <div className="inbox-title"><h2>Conversations</h2><span className="inbox-count">{conversations.length}</span></div>
+        {demoMode ? <span className="status">Demo — no real messages are sent</span> : null}
+        <p>Every customer. One thoughtful reply.</p>
+        <label className="inbox-search"><span aria-hidden="true">⌕</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search conversations…" aria-label="Search conversations" /></label>
         <div className="filters" id="filters">
           <Chip data-filter="all" active={filter === 'all'} onClick={() => onFilterChange('all')}>All</Chip>
           <Chip data-filter="whatsapp" active={filter === 'whatsapp'} onClick={() => onFilterChange('whatsapp')}>WhatsApp</Chip>
@@ -61,7 +64,7 @@ export function InboxList({ conversations, unansweredIds, filter, selectedId, on
       </div>
       <div className="conv-list" id="convList">
         {showWhatsAppSetup ? (
-          <div style={{ padding: '16px' }}>
+          <div className="inbox-connection">
             <Link href="/settings/whatsapp" className="chip">WhatsApp connection settings</Link>
             <p className="assignee" style={{ marginTop: '6px' }}>
               {demoMode ? 'A Live workspace is required to receive real messages.' : 'Check your connection status in Settings. Incoming WhatsApp conversations will appear here.'}
@@ -69,9 +72,10 @@ export function InboxList({ conversations, unansweredIds, filter, selectedId, on
           </div>
         ) : null}
         {filteredConversations.length === 0 ? (
-          <div style={{ padding: '24px 16px', color: 'var(--muted)' }} role="status">
-            <strong>No conversations here yet</strong>
-            <p>{filter === 'all' ? 'Open Menu to find your Team, Settings and channel connections.' : 'Try another channel or select All to see your conversations.'}</p>
+          <div className="inbox-empty" role="status">
+            <div className="inbox-empty-icon" aria-hidden="true">↗</div>
+            <strong>{search ? 'No matching conversations' : 'A fresh start for your inbox'}</strong>
+            <p>{search ? 'Try a different name or message.' : filter === 'all' ? 'Your incoming customer messages will appear here, ready for a personal reply.' : 'No conversations in this view yet. Choose All to see other channels.'}</p>
             {demoMode && conversations.length === 0 ? (
               <div style={{ marginTop: '12px' }}>
                 <button className="chip" type="button" onClick={loadSamples} disabled={demoBusy}>{demoBusy ? 'Loading samples…' : 'Load sample demo conversations'}</button>
@@ -88,7 +92,8 @@ export function InboxList({ conversations, unansweredIds, filter, selectedId, on
             type="button"
             onClick={() => onConversationClick(c.id)}
           >
-            <div className="conv-top">
+            <span className="conv-avatar" aria-hidden="true">{c.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()}</span>
+            <div className="conv-content"><div className="conv-top">
               <strong>{c.name}</strong>
               <span className="time">{c.time}</span>
             </div>
@@ -96,6 +101,7 @@ export function InboxList({ conversations, unansweredIds, filter, selectedId, on
             <div className="conv-meta">
               <Badge variant={c.channel}>{channelLabel[c.channel]}</Badge>
               <Badge variant="status" statusType={c.statusClass}>{c.status}</Badge>
+            </div>
             </div>
           </button>
         ))}

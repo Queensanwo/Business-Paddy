@@ -12,6 +12,22 @@ interface SetupStatus {
 export default function WhatsAppSetupCheck() {
   const [status, setStatus] = useState<SetupStatus | null>(null);
   const [error, setError] = useState('');
+  const [provider, setProvider] = useState<{ phoneAccessible: boolean; subscriptionChecked: boolean; subscribedApps: { id: string; name: string }[]; problem: string | null } | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [providerError, setProviderError] = useState('');
+  async function checkProvider() {
+    setChecking(true);
+    setProvider(null);
+    setProviderError('');
+    try {
+      const response = await fetch('/api/channels/whatsapp/health', { cache: 'no-store' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not check Meta.');
+      setProvider(result);
+    } catch (error) {
+      setProviderError(error instanceof Error ? error.message : 'Could not check Meta.');
+    } finally { setChecking(false); }
+  }
   useEffect(() => {
     let active = true;
     async function check() {
@@ -46,6 +62,19 @@ export default function WhatsAppSetupCheck() {
         {!status.workspaceMatches && <p>The test number is not assigned to this workspace. Check WHATSAPP_TEST_WORKSPACE_ID in Netlify.</p>}
         {!status.ready && <p>For a missing setting, check its Production value and Functions scope in Netlify, then publish a new deploy and refresh this page.</p>}
         {status.ready && <p>Return to WhatsApp connection to connect the test number. Sending and receiving still need a separate test.</p>}
+        {status.ready && <section style={{ borderTop: '1px solid #e5eaf3', marginTop: 24, paddingTop: 20 }}>
+          <h2>Check message delivery</h2>
+          <p>Check whether Meta accepts your saved token and which apps receive messages for this account. This does not send a message or change settings.</p>
+          <button className="menu-btn" style={{ display: 'inline-flex', margin: '16px 0' }} type="button" disabled={checking} onClick={checkProvider}>{checking ? 'Checking Meta…' : 'Check connection with Meta'}</button>
+          {providerError && <p role="alert">{providerError}</p>}
+          {provider && <div role="status">
+            <p><strong>Access to your test number</strong> — {provider.phoneAccessible ? 'Confirmed' : 'Not confirmed'}</p>
+            <p><strong>Message subscriptions</strong> — {provider.subscriptionChecked ? `${provider.subscribedApps.length} app(s) identified` : 'Could not check'}</p>
+            {provider.subscribedApps.map((app) => <p key={app.id}>{app.name} · App ID {app.id}</p>)}
+            {provider.problem && <p><strong>{provider.problem}</strong></p>}
+            {!provider.problem && <p>These checks do not prove that messages are arriving. Confirm this app is listed above, check its publishing status in Meta, then send a new reply from your phone.</p>}
+          </div>}
+        </section>}
       </>}
     </section>
   </main>;
