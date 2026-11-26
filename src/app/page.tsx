@@ -86,7 +86,7 @@ function ProductPreview() {
           <span className="lp-shot-search">Search conversations…</span>
         </div>
         <div className="lp-shot-tabs">
-          {['All', 'WhatsApp', 'Instagram', 'Email', 'TikTok', 'Website'].map((t, i) => (
+          {['All', 'WhatsApp', 'Instagram', 'Facebook', 'Email', 'TikTok', 'Website'].map((t, i) => (
             <span key={t} className={i === 0 ? 'on' : ''}>{t}</span>
           ))}
         </div>
